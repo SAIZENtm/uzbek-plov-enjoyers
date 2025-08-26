@@ -28,7 +28,7 @@ import 'package:app_links/app_links.dart';
 
 final getIt = GetIt.instance;
 
-// Background message handler for FCM vfdvdf alish pipiskag defwefwes shluha pidor pidor срудут ygygyukgky
+// Background message handler for FCM vfdvdf alish pipiskag defwefwes shluha pidor pidor срудут ygygyukgkyггг
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
