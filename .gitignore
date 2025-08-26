@@ -92,7 +92,6 @@ app.*.symbols
 *.env.production
 google-services.json
 GoogleService-Info.plist
-firebase_options.dart
 
 # Local development files
 *.log
