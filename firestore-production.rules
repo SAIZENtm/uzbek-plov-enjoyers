@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Функции-помощники ---
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // --- Основные правила ---
+
+    // Администраторы
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // Только через консоль Firebase
+    }
+    
+    // Новости
+    match /news/{newsId} {
+      allow read: if resource.data.status == 'published';
+      allow write: if isAdmin();
+    }
+    
+    // Пользовательские настройки
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Профили пользователей
+    match /userProfiles/{profileId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                      (request.auth.uid == profileId || isAdmin());
+      allow create: if isAuthenticated();
+    }
+    
+    // FCM токены
+    match /fcm_tokens/{phoneNumber} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Блоки и квартиры (только чтение для пользователей)
+    match /blocks/{blockId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      match /apartments/{apartmentId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+    
+    // Структура users/{blockId}/apartments/{apartmentNumber}
+    match /users/{blockId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      match /apartments/{apartmentNumber} {
+        allow read: if true;
+        allow write: if isAuthenticated();
+      }
+    }
+    
+    // Service requests
+    match /serviceRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                      (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    // Residents
+    match /residents/{residentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Clients
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // Уведомления
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin();
+      allow update: if isAuthenticated() && 
+                      resource.data.userId == request.auth.uid &&
+                      request.resource.data.keys().hasOnly(['isRead', 'readAt']);
+      allow delete: if isAdmin();
+    }
+    
+    // Семейные запросы
+    match /familyRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                      (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+    
+    // Семейные инвайты
+    match /familyInvites/{inviteId} {
+      allow read: if true; // Публичное чтение для валидации
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Квартиры с семейной логикой
+    match /apartments/{apartmentId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow create, delete: if isAdmin();
+    }
+    
+    // Остальные административные коллекции
+    match /payments/{paymentId} { allow read, write: if isAdmin(); }
+    match /bookings/{bookingId} { allow read, write: if isAdmin(); }
+    match /feedback/{feedbackId} { allow read, write: if isAdmin(); }
+  }
+} 

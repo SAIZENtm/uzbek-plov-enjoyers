@@ -1,0 +1,317 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===== HELPER ФУНКЦИИ ДЛЯ БЕЗОПАСНОСТИ =====
+    
+    // Проверка аутентификации
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+    
+    // Проверка что пользователь - администратор
+    function isAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Получить данные профиля текущего пользователя
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/userProfiles/$(request.auth.uid));
+    }
+
+    // Проверка наличия профиля
+    function hasUserProfile() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid));
+    }
+    
+    // Проверка что пользователь владеет квартирой
+    function ownsApartment(apartmentId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/apartments/$(apartmentId)) &&
+        get(/databases/$(database)/documents/apartments/$(apartmentId)).data.ownerId == request.auth.uid;
+    }
+    
+    // Проверка что пользователь - член семьи в квартире
+    function isFamilyMember(apartmentId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/apartments/$(apartmentId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/apartments/$(apartmentId)).data.familyMemberIds;
+    }
+    
+    // Проверка доступа к квартире (владелец или член семьи)
+    function hasApartmentAccess(apartmentId) {
+      return ownsApartment(apartmentId) || isFamilyMember(apartmentId);
+    }
+    
+    // Проверка что пользователь связан с блоком и квартирой
+    function belongsToApartment(blockId, apartmentNumber) {
+      return hasUserProfile() &&
+             getUserProfile().data.blockId == blockId &&
+             getUserProfile().data.apartmentNumber == apartmentNumber;
+    }
+    
+    // ===== ПРАВИЛА ДЛЯ КОЛЛЕКЦИЙ =====
+    
+    // АДМИНИСТРАТОРЫ - только чтение для админов
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // Только через Firebase Console
+    }
+    
+    // НОВОСТИ - публичное чтение опубликованных
+    match /news/{newsId} {
+      allow read: if resource.data.status == 'published' || isAdmin();
+      allow write: if isAdmin();
+    }
+    
+    // ПРОФИЛИ ПОЛЬЗОВАТЕЛЕЙ
+    match /userProfiles/{userId} {
+      // Чтение: свой профиль или админ
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == userId || isAdmin());
+      
+      // Создание: только для своего uid при первой регистрации
+      allow create: if isAuthenticated() && 
+        request.auth.uid == userId &&
+        request.resource.data.keys().hasAll(['fullName', 'phone', 'role']) &&
+        request.resource.data.role in ['resident', 'familyMember'];
+      
+      // Обновление: только свой профиль, ограниченный набор полей
+      allow update: if isAuthenticated() && 
+        request.auth.uid == userId &&
+        request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['fullName', 'phone', 'email', 'lastLogin', 'fcmTokens']);
+      
+      // Удаление: только админ
+      allow delete: if isAdmin();
+    }
+    
+    // КВАРТИРЫ - основная коллекция
+    match /apartments/{apartmentId} {
+      // Чтение: владелец, члены семьи или админ
+      allow read: if isAuthenticated() && 
+        (hasApartmentAccess(apartmentId) || isAdmin());
+      
+      // Создание: только админ
+      allow create: if isAdmin();
+      
+      // Обновление: владелец может изменять ограниченный набор полей;
+      // члены семьи могут только обновлять FCM токены
+      allow update: if isAuthenticated() && hasApartmentAccess(apartmentId) && (
+        (
+          ownsApartment(apartmentId) &&
+          request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['fcmTokens','preferences','familyMembers','lastActivity'])
+        ) ||
+        (
+          isFamilyMember(apartmentId) &&
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['fcmTokens'])
+        )
+      );
+      
+      // Удаление: только админ
+      allow delete: if isAdmin();
+    }
+    
+    // БЛОКИ И КВАРТИРЫ (альтернативная структура)
+    match /users/{blockId} {
+      // Чтение блоков: только если пользователь принадлежит блоку
+      allow read: if isAuthenticated() && 
+        ((hasUserProfile() && getUserProfile().data.blockId == blockId) || isAdmin());
+      
+      allow write: if isAdmin();
+      
+      // Квартиры в блоках
+      match /apartments/{apartmentNumber} {
+        // Чтение: только если это квартира пользователя
+        allow read: if isAuthenticated() && 
+          (belongsToApartment(blockId, apartmentNumber) || isAdmin());
+        
+        // Обновление: только FCM токены для своей квартиры
+        allow update: if isAuthenticated() && 
+          belongsToApartment(blockId, apartmentNumber) &&
+          request.resource.data.diff(resource.data).changedKeys()
+            .hasOnly(['fcmTokens', 'lastActivity']);
+        
+        allow create, delete: if isAdmin();
+      }
+    }
+    
+    // СЕРВИСНЫЕ ЗАЯВКИ
+    match /serviceRequests/{requestId} {
+      // Чтение: только свои заявки или админ
+      allow read: if isAuthenticated() && 
+        (
+          resource.data.userId == request.auth.uid ||
+          (hasUserProfile() && resource.data.passportNumber == getUserProfile().data.passportNumber) ||
+          isAdmin()
+        );
+      
+      // Создание: аутентифицированные пользователи со всеми обязательными полями
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['userId', 'apartmentNumber', 'blockId', 
+                                            'requestType', 'description', 'status']) &&
+        request.resource.data.status == 'pending';
+      
+      // Обновление: автор может отменить, админ может менять статус
+      allow update: if isAuthenticated() && (
+        // Автор может только отменить
+        (resource.data.userId == request.auth.uid && 
+         request.resource.data.status == 'cancelled' &&
+         resource.data.status == 'pending') ||
+        // Админ может всё
+        isAdmin()
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    // УВЕДОМЛЕНИЯ
+    match /notifications/{notificationId} {
+      // Чтение: только свои уведомления
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Создание: только админ или система (через Cloud Functions)
+      allow create: if isAdmin();
+      
+      // Обновление: пользователь может отметить как прочитанное
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['isRead', 'readAt']);
+      
+      allow delete: if isAdmin();
+    }
+    
+    // FCM ТОКЕНЫ - привязаны к userId, не к телефону
+    match /fcm_tokens/{userId} {
+      // Чтение и запись только для своего документа
+      allow read, write: if isAuthenticated() && 
+        request.auth.uid == userId;
+    }
+    
+    // СЕМЕЙНЫЕ ЗАПРОСЫ
+    match /familyRequests/{requestId} {
+      // Чтение: участники запроса (заявитель или владелец квартиры)
+      allow read: if isAuthenticated() && (
+        // Заявитель
+        resource.data.applicantPhone == getUserProfile().data.phone ||
+        // Владелец квартиры
+        hasApartmentAccess(resource.data.apartmentId) ||
+        // Админ
+        isAdmin()
+      );
+      
+      // Создание: любой аутентифицированный может подать запрос
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasAll(['name', 'role', 'blockId', 
+                                            'apartmentNumber', 'applicantPhone']) &&
+        request.resource.data.status == 'pending';
+      
+      // Обновление: владелец квартиры может одобрить/отклонить
+      allow update: if isAuthenticated() && 
+        ownsApartment(resource.data.apartmentId) &&
+        request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['status', 'respondedAt', 'rejectionReason']);
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ПРИГЛАШЕНИЯ
+    match /invitations/{inviteId} {
+      // Чтение: по ID приглашения (для принятия по ссылке) — только не истекшие
+      allow read: if resource.data.expiresAt == null || resource.data.expiresAt > request.time;
+      
+      // Управление: только создатель или админ
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+    
+    // ПЛАТЕЖИ - только для админов
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && 
+        (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    // ПОКАЗАНИЯ СЧЕТЧИКОВ
+    match /utilityReadings/{readingId} {
+      // Чтение: только свои показания
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Создание: для своей квартиры
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.apartmentId in getUserProfile().data.apartmentIds;
+      
+      // Обновление и удаление: только админ
+      allow update, delete: if isAdmin();
+    }
+    
+    // ОБРАТНАЯ СВЯЗЬ
+    match /feedback/{feedbackId} {
+      // Чтение: автор или админ
+      allow read: if isAuthenticated() && 
+        (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Создание: любой аутентифицированный
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Обновление и удаление: только админ
+      allow update, delete: if isAdmin();
+    }
+    
+    // ПРОФИЛИ ПОЛЬЗОВАТЕЛЕЙ
+    match /userProfiles/{userId} {
+      // Чтение: только свой профиль или админ
+      allow read: if isAuthenticated() && 
+        (userId == request.auth.uid || userId == getUserProfile().data.passportNumber || isAdmin());
+      
+      // Создание: только своего профиля с обязательным uid
+      allow create: if isAuthenticated() && 
+        (userId == request.auth.uid || userId == request.resource.data.passportNumber) &&
+        request.resource.data.uid == request.auth.uid;
+      
+      // Обновление: своего профиля (либо с uid, либо метаданные)
+      allow update: if isAuthenticated() && 
+        (userId == request.auth.uid || userId == getUserProfile().data.passportNumber) &&
+        (
+          // Полное обновление профиля (с uid)
+          request.resource.data.uid == request.auth.uid ||
+          // Только метаданные (без изменения uid)
+          (!('uid' in request.resource.data.diff(resource.data).affectedKeys()) && 
+           resource.data.uid == request.auth.uid)
+        );
+      
+      // Удаление: только админ
+      allow delete: if isAdmin();
+    }
+    
+    // КОЛЛЕКЦИЯ USERS (legacy support)
+    match /users/{userId} {
+      // Чтение: только свой профиль или админ
+      allow read: if isAuthenticated() && 
+        (userId == request.auth.uid || userId == getUserProfile().data.passportNumber || isAdmin());
+      
+      // Создание и обновление: только своего профиля
+      allow create, update: if isAuthenticated() && 
+        (userId == request.auth.uid || userId == request.resource.data.passportNumber) &&
+        request.resource.data.uid == request.auth.uid;
+      
+      // Удаление: только админ
+      allow delete: if isAdmin();
+    }
+    
+    // ===== ЗАЩИТА ПО УМОЛЧАНИЮ =====
+    // Все остальные пути запрещены
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

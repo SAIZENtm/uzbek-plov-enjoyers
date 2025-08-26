@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Newport</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>newport</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	
+	<!-- Firebase Messaging -->
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<true/>
+	
+	<!-- Push Notifications -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	
+	<!-- Camera Usage (для считывания показаний счетчиков) -->
+	<key>NSCameraUsageDescription</key>
+	<string>Приложение использует камеру для фотографирования показаний счетчиков и прикрепления фото к заявкам</string>
+	
+	<!-- Photo Library Usage -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Приложение использует галерею для выбора фотографий при создании заявок</string>
+	
+	<!-- Location Usage (если используется) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Приложение использует геолокацию для определения вашего местоположения при создании заявок</string>
+	
+	<!-- ===== БЕЗОПАСНАЯ КОНФИГУРАЦИЯ ATS ===== -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- По умолчанию требуем HTTPS -->
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		
+		<!-- Разрешаем локальную разработку -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+		
+		<!-- Исключения для конкретных доменов (только если абсолютно необходимо) -->
+		<key>NSExceptionDomains</key>
+		<dict>
+			<!-- Пример: API который пока не поддерживает HTTPS -->
+			<!-- ВАЖНО: Удалите этот блок если все API используют HTTPS -->
+			<!--
+			<key>legacy-api.example.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<false/>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<true/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+			</dict>
+			-->
+			
+			<!-- Для локальной разработки (только в debug builds) -->
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+			
+			<!-- Firebase Emulator Suite -->
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	
+	<!-- URL Schemes для Deep Links -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>newport</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.example.newport</string>
+		</dict>
+		<!-- Firebase Dynamic Links -->
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.example.newport</string>
+			</array>
+		</dict>
+	</array>
+	
+	<!-- Запрашиваемые схемы (для url_launcher) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>https</string>
+		<string>http</string>
+		<string>tel</string>
+		<string>mailto</string>
+		<string>payme</string> <!-- Для открытия приложения Payme -->
+	</array>
+	
+	<!-- Защита от скриншотов для чувствительных экранов -->
+	<key>UIApplicationExitsOnSuspend</key>
+	<false/>
+	
+	<!-- Требование Face ID / Touch ID -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>Используйте Face ID для безопасного входа в приложение</string>
+</dict>
+</plist>

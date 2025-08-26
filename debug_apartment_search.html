@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Apartment Search - Newport Resident</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .apartment-data {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .collection-info {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Apartment Search</h1>
+        <p>This tool helps debug apartment data structure in Firebase for family requests.</p>
+        
+        <div class="form-group">
+            <label for="phoneNumber">Phone Number (+998...)</label>
+            <input 
+                type="tel" 
+                id="phoneNumber" 
+                placeholder="+998988124111"
+                value="+998988124111"
+            >
+        </div>
+
+        <button onclick="searchApartments()" id="searchBtn">
+            🔍 Search All Collections
+        </button>
+
+        <div id="results"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, collectionGroup, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAKW3LAJ7xTRwp1KqmE4T8JG6D23JhGFy8",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "1020074735000",
+            appId: "1:1020074735000:web:7b87b79f9e0c98c38bb15e",
+            measurementId: "G-LFVQKHQQGM"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make functions globally available
+        window.searchApartments = async function() {
+            const phoneInput = document.getElementById('phoneNumber');
+            const resultsDiv = document.getElementById('results');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            const phoneNumber = phoneInput.value.trim();
+            
+            if (!phoneNumber) {
+                showResult('❌ Please enter a phone number', 'error');
+                return;
+            }
+
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            resultsDiv.innerHTML = '';
+
+            try {
+                showResult('🔍 Starting comprehensive apartment search...', 'info');
+                
+                let totalFound = 0;
+                
+                // Search 1: Collection group 'apartments'
+                try {
+                    showResult('📂 Searching collection group "apartments"...', 'info');
+                    const apartmentsQuery = query(
+                        collectionGroup(db, 'apartments'),
+                        where('phone', '==', phoneNumber)
+                    );
+                    const apartmentsSnapshot = await getDocs(apartmentsQuery);
+                    
+                    if (apartmentsSnapshot.docs.length > 0) {
+                        showResult(`✅ Found ${apartmentsSnapshot.docs.length} documents in collection group "apartments"`, 'success');
+                        apartmentsSnapshot.docs.forEach((doc, index) => {
+                            const data = doc.data();
+                            const path = doc.ref.path;
+                            showApartmentData(`Collection Group - Document ${index + 1}`, path, data);
+                            totalFound++;
+                        });
+                    } else {
+                        showResult('⚠️ No documents found in collection group "apartments"', 'error');
+                    }
+                } catch (error) {
+                    showResult(`❌ Collection group search failed: ${error.message}`, 'error');
+                }
+
+                // Search 2: Users collection
+                try {
+                    showResult('📂 Searching "users" collection...', 'info');
+                    const usersQuery = query(
+                        collection(db, 'users'),
+                        where('phone', '==', phoneNumber)
+                    );
+                    const usersSnapshot = await getDocs(usersQuery);
+                    
+                    if (usersSnapshot.docs.length > 0) {
+                        showResult(`✅ Found ${usersSnapshot.docs.length} documents in "users" collection`, 'success');
+                        usersSnapshot.docs.forEach((doc, index) => {
+                            const data = doc.data();
+                            const path = doc.ref.path;
+                            showApartmentData(`Users Collection - Document ${index + 1}`, path, data);
+                            totalFound++;
+                        });
+                    } else {
+                        showResult('⚠️ No documents found in "users" collection', 'error');
+                    }
+                } catch (error) {
+                    showResult(`❌ Users collection search failed: ${error.message}`, 'error');
+                }
+
+                // Search 3: Apartments collection (if exists)
+                try {
+                    showResult('📂 Searching "apartments" collection...', 'info');
+                    const directApartmentsQuery = query(
+                        collection(db, 'apartments'),
+                        where('phone', '==', phoneNumber)
+                    );
+                    const directApartmentsSnapshot = await getDocs(directApartmentsQuery);
+                    
+                    if (directApartmentsSnapshot.docs.length > 0) {
+                        showResult(`✅ Found ${directApartmentsSnapshot.docs.length} documents in "apartments" collection`, 'success');
+                        directApartmentsSnapshot.docs.forEach((doc, index) => {
+                            const data = doc.data();
+                            const path = doc.ref.path;
+                            showApartmentData(`Apartments Collection - Document ${index + 1}`, path, data);
+                            totalFound++;
+                        });
+                    } else {
+                        showResult('⚠️ No documents found in "apartments" collection', 'error');
+                    }
+                } catch (error) {
+                    showResult(`❌ Apartments collection search failed: ${error.message}`, 'error');
+                }
+
+                // Search 4: Known block structures
+                const knownBlocks = ['D', 'D BLOK', 'BLOK D', 'Block D', 'E', 'E BLOK', 'F', 'F BLOK'];
+                for (const blockId of knownBlocks) {
+                    try {
+                        showResult(`📂 Searching block "${blockId}" subcollection...`, 'info');
+                        const blockQuery = query(
+                            collection(db, 'users', blockId, 'apartments'),
+                            where('phone', '==', phoneNumber)
+                        );
+                        const blockSnapshot = await getDocs(blockQuery);
+                        
+                        if (blockSnapshot.docs.length > 0) {
+                            showResult(`✅ Found ${blockSnapshot.docs.length} documents in "${blockId}" subcollection`, 'success');
+                            blockSnapshot.docs.forEach((doc, index) => {
+                                const data = doc.data();
+                                const path = doc.ref.path;
+                                showApartmentData(`Block ${blockId} - Document ${index + 1}`, path, data);
+                                totalFound++;
+                            });
+                        }
+                    } catch (error) {
+                        // Block doesn't exist, continue
+                    }
+                }
+
+                showResult(`🎯 Search completed! Total documents found: ${totalFound}`, totalFound > 0 ? 'success' : 'error');
+                
+                if (totalFound === 0) {
+                    showResult(`💡 Suggestions:
+1. Check if the phone number format is correct (with or without +)
+2. Verify the apartment data exists in Firebase Console
+3. Check if the apartment is in a different collection structure
+4. Make sure the phone number matches exactly`, 'info');
+                }
+
+            } catch (error) {
+                showResult(`❌ Search error: ${error.message}`, 'error');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = '🔍 Search All Collections';
+            }
+        };
+
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function showApartmentData(title, path, data) {
+            const resultsDiv = document.getElementById('results');
+            
+            const container = document.createElement('div');
+            container.className = 'result success';
+            
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'collection-info';
+            titleDiv.textContent = `${title} (${path})`;
+            
+            const dataDiv = document.createElement('div');
+            dataDiv.className = 'apartment-data';
+            dataDiv.textContent = JSON.stringify(data, null, 2);
+            
+            container.appendChild(titleDiv);
+            container.appendChild(dataDiv);
+            resultsDiv.appendChild(container);
+        }
+    </script>
+</body>
+</html> 

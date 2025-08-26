@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Connection Diagnostic Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        .input-group {
+            margin: 10px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.connected { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .status.disconnected { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .status.warning { background-color: #fff3cd; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Firebase Connection Diagnostic Tool</h1>
+        
+        <div class="section">
+            <h2>📊 Connection Status</h2>
+            <div id="connectionStatus" class="status disconnected">
+                <strong>Status:</strong> <span id="statusText">Checking connection...</span>
+            </div>
+            <button onclick="checkConnection()">🔄 Check Connection</button>
+            <button onclick="testFirestoreAccess()">🧪 Test Firestore Access</button>
+        </div>
+
+        <div class="section">
+            <h2>🏗️ Database Structure Analysis</h2>
+            <button onclick="analyzeDatabaseStructure()">🔍 Analyze Database Structure</button>
+            <button onclick="listAllCollections()">📋 List All Collections</button>
+            <button onclick="checkApartmentData()">🏠 Check Apartment Data</button>
+            <div id="structureLog" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>👤 User Data Analysis</h2>
+            <div class="input-group">
+                <label for="passportNumber">Passport Number:</label>
+                <input type="text" id="passportNumber" placeholder="Enter passport number">
+            </div>
+            <div class="input-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input type="text" id="phoneNumber" placeholder="Enter phone number">
+            </div>
+            <button onclick="findUserApartments()">🔍 Find User Apartments</button>
+            <button onclick="checkUserData()">👤 Check User Data</button>
+            <div id="userLog" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Data Synchronization Test</h2>
+            <div class="grid">
+                <div>
+                    <h3>Test Data Creation</h3>
+                    <div class="input-group">
+                        <label for="testBlock">Block ID:</label>
+                        <input type="text" id="testBlock" value="D BLOK">
+                    </div>
+                    <div class="input-group">
+                        <label for="testApartment">Apartment Number:</label>
+                        <input type="text" id="testApartment" value="101">
+                    </div>
+                    <div class="input-group">
+                        <label for="testPhone">Phone:</label>
+                        <input type="text" id="testPhone" value="998952354500">
+                    </div>
+                    <button onclick="createTestApartment()">➕ Create Test Apartment</button>
+                </div>
+                <div>
+                    <h3>Data Verification</h3>
+                    <button onclick="verifyTestData()">✅ Verify Test Data</button>
+                    <button onclick="cleanupTestData()">🗑️ Cleanup Test Data</button>
+                </div>
+            </div>
+            <div id="syncLog" class="log"></div>
+        </div>
+
+        <div class="section">
+            <h2>📈 Performance Analysis</h2>
+            <button onclick="testQueryPerformance()">⚡ Test Query Performance</button>
+            <button onclick="analyzeIndexes()">🔍 Analyze Indexes</button>
+            <div id="performanceLog" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKWF5u-9BFiJ_P5BKIfVaacOrBmXTHJD4",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "806326874620",
+            appId: "1:806326874620:android:713641402de98fda228279"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        let isConnected = false;
+
+        function log(elementId, message, type = 'info') {
+            const logElement = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateConnectionStatus(connected, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            
+            isConnected = connected;
+            statusText.textContent = message;
+            
+            statusElement.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        async function checkConnection() {
+            log('structureLog', '🔍 Checking Firebase connection...', 'info');
+            
+            try {
+                // Test Firestore connection
+                const testDoc = await db.collection('_test_connection').doc('test').get();
+                updateConnectionStatus(true, '✅ Connected to Firebase');
+                log('structureLog', '✅ Firestore connection successful', 'success');
+                
+                // Test Auth connection
+                await auth.signInAnonymously();
+                log('structureLog', '✅ Firebase Auth connection successful', 'success');
+                
+            } catch (error) {
+                updateConnectionStatus(false, '❌ Connection failed');
+                log('structureLog', `❌ Connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFirestoreAccess() {
+            log('structureLog', '🧪 Testing Firestore access...', 'info');
+            
+            try {
+                // Test read access
+                const blocksSnapshot = await db.collection('blocks').limit(1).get();
+                log('structureLog', `✅ Read access: Found ${blocksSnapshot.size} blocks`, 'success');
+                
+                // Test write access (with cleanup)
+                const testDoc = db.collection('_test_access').doc('test');
+                await testDoc.set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                log('structureLog', '✅ Write access: Successfully created test document', 'success');
+                
+                // Cleanup
+                await testDoc.delete();
+                log('structureLog', '✅ Delete access: Successfully deleted test document', 'success');
+                
+            } catch (error) {
+                log('structureLog', `❌ Access test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function analyzeDatabaseStructure() {
+            log('structureLog', '🔍 Analyzing database structure...', 'info');
+            
+            try {
+                const collections = ['blocks', 'users', 'apartments', 'clients', 'residents', 'familyRequests', 'invitations'];
+                
+                for (const collectionName of collections) {
+                    try {
+                        const snapshot = await db.collection(collectionName).limit(5).get();
+                        log('structureLog', `📋 ${collectionName}: ${snapshot.size} documents found`, 'info');
+                        
+                        if (snapshot.size > 0) {
+                            const sampleDoc = snapshot.docs[0];
+                            const fields = Object.keys(sampleDoc.data());
+                            log('structureLog', `   Fields: ${fields.join(', ')}`, 'info');
+                        }
+                    } catch (error) {
+                        log('structureLog', `❌ ${collectionName}: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Check for subcollections
+                log('structureLog', '🔍 Checking for subcollections...', 'info');
+                const usersSnapshot = await db.collection('users').limit(3).get();
+                
+                for (const userDoc of usersSnapshot.docs) {
+                    const subcollections = await userDoc.ref.listCollections();
+                    if (subcollections.length > 0) {
+                        log('structureLog', `📁 ${userDoc.id} has subcollections: ${subcollections.map(c => c.id).join(', ')}`, 'info');
+                    }
+                }
+                
+            } catch (error) {
+                log('structureLog', `❌ Structure analysis failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function listAllCollections() {
+            log('structureLog', '📋 Listing all collections...', 'info');
+            
+            try {
+                // Note: Firestore doesn't have a direct way to list all collections
+                // We'll check known collections and try to discover others
+                const knownCollections = [
+                    'blocks', 'users', 'apartments', 'clients', 'residents', 
+                    'familyRequests', 'invitations', 'news', 'notifications',
+                    'serviceRequests', 'payments', 'admins', 'fcm_tokens'
+                ];
+                
+                for (const collectionName of knownCollections) {
+                    try {
+                        const snapshot = await db.collection(collectionName).limit(1).get();
+                        log('structureLog', `✅ ${collectionName}: ${snapshot.size} documents`, 'success');
+                    } catch (error) {
+                        log('structureLog', `❌ ${collectionName}: ${error.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log('structureLog', `❌ Failed to list collections: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkApartmentData() {
+            log('structureLog', '🏠 Checking apartment data structure...', 'info');
+            
+            try {
+                // Strategy 1: Check collectionGroup
+                const groupSnapshot = await db.collectionGroup('apartments').limit(5).get();
+                log('structureLog', `📋 CollectionGroup 'apartments': ${groupSnapshot.size} documents`, 'info');
+                
+                for (const doc of groupSnapshot.docs) {
+                    const data = doc.data();
+                    log('structureLog', `   Path: ${doc.ref.path}`, 'info');
+                    log('structureLog', `   Fields: ${Object.keys(data).join(', ')}`, 'info');
+                }
+                
+                // Strategy 2: Check users collection
+                const usersSnapshot = await db.collection('users').limit(5).get();
+                log('structureLog', `📋 Users collection: ${usersSnapshot.size} documents`, 'info');
+                
+                for (const doc of usersSnapshot.docs) {
+                    const data = doc.data();
+                    if (data.apartment_number || data.block_number) {
+                        log('structureLog', `   User with apartment: ${doc.id}`, 'info');
+                        log('structureLog', `   Apartment fields: ${Object.keys(data).filter(k => k.includes('apartment') || k.includes('block')).join(', ')}`, 'info');
+                    }
+                }
+                
+            } catch (error) {
+                log('structureLog', `❌ Apartment data check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function findUserApartments() {
+            const passportNumber = document.getElementById('passportNumber').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            
+            log('userLog', `🔍 Searching for user apartments...`, 'info');
+            log('userLog', `   Passport: ${passportNumber}`, 'info');
+            log('userLog', `   Phone: ${phoneNumber}`, 'info');
+            
+            try {
+                const apartments = [];
+                
+                // Strategy 1: Search by passport in collectionGroup
+                if (passportNumber) {
+                    try {
+                        const passportQuery = await db.collectionGroup('apartments')
+                            .where('passport_number', '==', passportNumber)
+                            .get();
+                        
+                        log('userLog', `📋 Found ${passportQuery.size} apartments by passport in collectionGroup`, 'info');
+                        
+                        for (const doc of passportQuery.docs) {
+                            const data = doc.data();
+                            apartments.push({
+                                path: doc.ref.path,
+                                data: data
+                            });
+                            log('userLog', `   ${doc.ref.path}: ${data.apartment_number} in ${data.block_number || 'unknown block'}`, 'success');
+                        }
+                    } catch (error) {
+                        log('userLog', `❌ Passport search failed: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Strategy 2: Search by phone in collectionGroup
+                if (phoneNumber) {
+                    try {
+                        const phoneQuery = await db.collectionGroup('apartments')
+                            .where('phone', '==', phoneNumber)
+                            .get();
+                        
+                        log('userLog', `📋 Found ${phoneQuery.size} apartments by phone in collectionGroup`, 'info');
+                        
+                        for (const doc of phoneQuery.docs) {
+                            const data = doc.data();
+                            apartments.push({
+                                path: doc.ref.path,
+                                data: data
+                            });
+                            log('userLog', `   ${doc.ref.path}: ${data.apartment_number} in ${data.block_number || 'unknown block'}`, 'success');
+                        }
+                    } catch (error) {
+                        log('userLog', `❌ Phone search failed: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Strategy 3: Search in users collection
+                if (passportNumber) {
+                    try {
+                        const usersQuery = await db.collection('users')
+                            .where('passport_number', '==', passportNumber)
+                            .get();
+                        
+                        log('userLog', `📋 Found ${usersQuery.size} users by passport`, 'info');
+                        
+                        for (const doc of usersQuery.docs) {
+                            const data = doc.data();
+                            apartments.push({
+                                path: doc.ref.path,
+                                data: data
+                            });
+                            log('userLog', `   ${doc.ref.path}: ${data.apartment_number} in ${data.block_number || 'unknown block'}`, 'success');
+                        }
+                    } catch (error) {
+                        log('userLog', `❌ Users collection search failed: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Remove duplicates
+                const uniqueApartments = apartments.filter((apt, index, self) => 
+                    index === self.findIndex(a => a.path === apt.path)
+                );
+                
+                log('userLog', `🎯 Total unique apartments found: ${uniqueApartments.length}`, 'success');
+                
+            } catch (error) {
+                log('userLog', `❌ User apartment search failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkUserData() {
+            const passportNumber = document.getElementById('passportNumber').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            
+            log('userLog', '👤 Checking user data...', 'info');
+            
+            try {
+                // Check clients collection
+                if (passportNumber) {
+                    const clientId = `client_${passportNumber}`;
+                    const clientDoc = await db.collection('clients').doc(clientId).get();
+                    
+                    if (clientDoc.exists) {
+                        const data = clientDoc.data();
+                        log('userLog', `✅ Client found: ${clientId}`, 'success');
+                        log('userLog', `   Apartments: ${data.apartmentIds ? data.apartmentIds.length : 0}`, 'info');
+                        log('userLog', `   Full name: ${data.fullName || 'N/A'}`, 'info');
+                    } else {
+                        log('userLog', `❌ Client not found: ${clientId}`, 'warning');
+                    }
+                }
+                
+                // Check residents collection
+                if (passportNumber) {
+                    const residentDoc = await db.collection('residents').doc(passportNumber).get();
+                    
+                    if (residentDoc.exists) {
+                        const data = residentDoc.data();
+                        log('userLog', `✅ Resident found: ${passportNumber}`, 'success');
+                        log('userLog', `   Block: ${data.blockId || 'N/A'}`, 'info');
+                        log('userLog', `   Apartment: ${data.apartmentNumber || 'N/A'}`, 'info');
+                    } else {
+                        log('userLog', `❌ Resident not found: ${passportNumber}`, 'warning');
+                    }
+                }
+                
+            } catch (error) {
+                log('userLog', `❌ User data check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestApartment() {
+            const blockId = document.getElementById('testBlock').value;
+            const apartmentNumber = document.getElementById('testApartment').value;
+            const phone = document.getElementById('testPhone').value;
+            
+            log('syncLog', `➕ Creating test apartment...`, 'info');
+            log('syncLog', `   Block: ${blockId}`, 'info');
+            log('syncLog', `   Apartment: ${apartmentNumber}`, 'info');
+            log('syncLog', `   Phone: ${phone}`, 'info');
+            
+            try {
+                // Create in users/{blockId}/apartments/{apartmentNumber}
+                const apartmentRef = db.collection('users').doc(blockId).collection('apartments').doc(apartmentNumber);
+                
+                const apartmentData = {
+                    apartment_number: apartmentNumber,
+                    block_number: blockId,
+                    phone: phone,
+                    passport_number: 'TEST123456',
+                    fullName: 'Test User',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await apartmentRef.set(apartmentData);
+                log('syncLog', `✅ Test apartment created: ${apartmentRef.path}`, 'success');
+                
+                // Also create in users collection for compatibility
+                const userRef = db.collection('users').doc(`${blockId}_${apartmentNumber}`);
+                await userRef.set(apartmentData);
+                log('syncLog', `✅ Test user created: ${userRef.path}`, 'success');
+                
+            } catch (error) {
+                log('syncLog', `❌ Failed to create test apartment: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifyTestData() {
+            const blockId = document.getElementById('testBlock').value;
+            const apartmentNumber = document.getElementById('testApartment').value;
+            const phone = document.getElementById('testPhone').value;
+            
+            log('syncLog', `✅ Verifying test data...`, 'info');
+            
+            try {
+                // Check in users/{blockId}/apartments/{apartmentNumber}
+                const apartmentRef = db.collection('users').doc(blockId).collection('apartments').doc(apartmentNumber);
+                const apartmentDoc = await apartmentRef.get();
+                
+                if (apartmentDoc.exists) {
+                    log('syncLog', `✅ Found in subcollection: ${apartmentRef.path}`, 'success');
+                } else {
+                    log('syncLog', `❌ Not found in subcollection: ${apartmentRef.path}`, 'error');
+                }
+                
+                // Check in users collection
+                const userRef = db.collection('users').doc(`${blockId}_${apartmentNumber}`);
+                const userDoc = await userRef.get();
+                
+                if (userDoc.exists) {
+                    log('syncLog', `✅ Found in users collection: ${userRef.path}`, 'success');
+                } else {
+                    log('syncLog', `❌ Not found in users collection: ${userRef.path}`, 'error');
+                }
+                
+                // Test search by phone
+                const phoneQuery = await db.collectionGroup('apartments')
+                    .where('phone', '==', phone)
+                    .get();
+                
+                log('syncLog', `📋 Found ${phoneQuery.size} apartments by phone search`, 'info');
+                
+                for (const doc of phoneQuery.docs) {
+                    log('syncLog', `   ${doc.ref.path}`, 'info');
+                }
+                
+            } catch (error) {
+                log('syncLog', `❌ Verification failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function cleanupTestData() {
+            const blockId = document.getElementById('testBlock').value;
+            const apartmentNumber = document.getElementById('testApartment').value;
+            
+            log('syncLog', `🗑️ Cleaning up test data...`, 'info');
+            
+            try {
+                // Delete from subcollection
+                const apartmentRef = db.collection('users').doc(blockId).collection('apartments').doc(apartmentNumber);
+                await apartmentRef.delete();
+                log('syncLog', `✅ Deleted from subcollection: ${apartmentRef.path}`, 'success');
+                
+                // Delete from users collection
+                const userRef = db.collection('users').doc(`${blockId}_${apartmentNumber}`);
+                await userRef.delete();
+                log('syncLog', `✅ Deleted from users collection: ${userRef.path}`, 'success');
+                
+            } catch (error) {
+                log('syncLog', `❌ Cleanup failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testQueryPerformance() {
+            log('performanceLog', '⚡ Testing query performance...', 'info');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Test collectionGroup query
+                const groupQuery = await db.collectionGroup('apartments').limit(10).get();
+                const groupTime = performance.now() - startTime;
+                
+                log('performanceLog', `📊 CollectionGroup query: ${groupTime.toFixed(2)}ms for ${groupQuery.size} documents`, 'info');
+                
+                // Test users collection query
+                const usersStart = performance.now();
+                const usersQuery = await db.collection('users').limit(10).get();
+                const usersTime = performance.now() - usersStart;
+                
+                log('performanceLog', `📊 Users collection query: ${usersTime.toFixed(2)}ms for ${usersQuery.size} documents`, 'info');
+                
+                // Test blocks collection query
+                const blocksStart = performance.now();
+                const blocksQuery = await db.collection('blocks').limit(10).get();
+                const blocksTime = performance.now() - blocksStart;
+                
+                log('performanceLog', `📊 Blocks collection query: ${blocksTime.toFixed(2)}ms for ${blocksQuery.size} documents`, 'info');
+                
+            } catch (error) {
+                log('performanceLog', `❌ Performance test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function analyzeIndexes() {
+            log('performanceLog', '🔍 Analyzing indexes...', 'info');
+            
+            try {
+                // Test queries that might require indexes
+                const testQueries = [
+                    {
+                        name: 'CollectionGroup with phone filter',
+                        query: () => db.collectionGroup('apartments').where('phone', '==', '998952354500').get()
+                    },
+                    {
+                        name: 'CollectionGroup with passport filter',
+                        query: () => db.collectionGroup('apartments').where('passport_number', '==', 'TEST123456').get()
+                    },
+                    {
+                        name: 'Users with apartment_number filter',
+                        query: () => db.collection('users').where('apartment_number', '==', '101').get()
+                    }
+                ];
+                
+                for (const testQuery of testQueries) {
+                    try {
+                        const startTime = performance.now();
+                        const result = await testQuery.query();
+                        const time = performance.now() - startTime;
+                        
+                        log('performanceLog', `✅ ${testQuery.name}: ${time.toFixed(2)}ms (${result.size} results)`, 'success');
+                    } catch (error) {
+                        if (error.message.includes('index')) {
+                            log('performanceLog', `⚠️ ${testQuery.name}: Missing index - ${error.message}`, 'warning');
+                        } else {
+                            log('performanceLog', `❌ ${testQuery.name}: ${error.message}`, 'error');
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                log('performanceLog', `❌ Index analysis failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-check connection on page load
+        window.addEventListener('load', () => {
+            checkConnection();
+        });
+    </script>
+</body>
+</html> 

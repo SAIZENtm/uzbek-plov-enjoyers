@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Правила для разработки - ТОЛЬКО для dev среды!
+    // Разрешаем чтение коллекции users (блоки)
+    match /users/{blockId} {
+      allow read: if true; // Разрешаем чтение блоков
+      
+      // Разрешаем чтение подколлекции apartments
+      match /apartments/{apartmentId} {
+        allow read, write: if true; // Полный доступ к квартирам для разработки
+      }
+    }
+    
+    // Разрешаем доступ к коллекциям для разработки
+    match /serviceRequests/{requestId} {
+      allow read, write: if true;
+    }
+    
+    match /feedback/{feedbackId} {
+      allow read, write: if true;
+    }
+    
+    match /clients/{clientId} {
+      allow read, write: if true;
+    }
+    
+    // Разрешаем доступ к другим коллекциям для разработки
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+} 

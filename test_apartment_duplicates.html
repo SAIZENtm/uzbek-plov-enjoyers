@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Apartment Duplicates</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .warning { background-color: #fff3cd; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Apartment Duplicates</h1>
+    <button onclick="testApartmentLoading()">Test Apartment Loading</button>
+    <button onclick="clearResults()">Clear Results</button>
+    <div id="results"></div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxGQoM3V-m6DtY9d_86Xsh8h5f0YZFU8Y",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.appspot.com",
+            messagingSenderId: "1098765432109",
+            appId: "1:1098765432109:web:abcdef1234567890"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testApartmentLoading() {
+            clearResults();
+            addResult('🔍 Testing apartment loading for passport: AD2444681', 'info');
+            
+            const passportNumber = 'AD2444681';
+            const allApartments = [];
+            const seenApartments = new Set();
+
+            // Strategy 1: CollectionGroup search
+            addResult('📋 Strategy 1: CollectionGroup search', 'info');
+            try {
+                const querySnapshot = await db.collectionGroup('apartments')
+                    .where('passport_number', '==', passportNumber)
+                    .get();
+
+                addResult(`   Found ${querySnapshot.docs.length} apartments via collectionGroup`, 'info');
+
+                for (let doc of querySnapshot.docs) {
+                    const data = doc.data();
+                    const blockId = doc.ref.parent.parent?.id || 'Unknown';
+                    const apartmentKey = `${blockId}_${data.apartment_number}`;
+                    
+                    if (!seenApartments.has(apartmentKey)) {
+                        seenApartments.add(apartmentKey);
+                        allApartments.push({
+                            blockId: blockId,
+                            apartmentNumber: data.apartment_number,
+                            path: doc.ref.path,
+                            source: 'CollectionGroup'
+                        });
+                        addResult(`     ✅ Added: ${blockId} ${data.apartment_number}`, 'success');
+                    } else {
+                        addResult(`     ⚠️ Skipped duplicate: ${blockId} ${data.apartment_number}`, 'warning');
+                    }
+                }
+            } catch (e) {
+                addResult(`   ❌ CollectionGroup search failed: ${e.message}`, 'error');
+            }
+
+            // Strategy 2: Users collection search
+            addResult('📋 Strategy 2: Users collection search', 'info');
+            try {
+                const usersSnapshot = await db.collection('users')
+                    .where('passport_number', '==', passportNumber)
+                    .get();
+
+                addResult(`   Found ${usersSnapshot.docs.length} apartments in users collection`, 'info');
+
+                for (let doc of usersSnapshot.docs) {
+                    const data = doc.data();
+                    const blockNumber = data.block_number || 'Unknown';
+                    const apartmentKey = `${blockNumber}_${data.apartment_number}`;
+                    
+                    if (!seenApartments.has(apartmentKey)) {
+                        seenApartments.add(apartmentKey);
+                        allApartments.push({
+                            blockId: blockNumber,
+                            apartmentNumber: data.apartment_number,
+                            path: doc.ref.path,
+                            source: 'Users'
+                        });
+                        addResult(`     ✅ Added: ${blockNumber} ${data.apartment_number}`, 'success');
+                    } else {
+                        addResult(`     ⚠️ Skipped duplicate: ${blockNumber} ${data.apartment_number}`, 'warning');
+                    }
+                }
+            } catch (e) {
+                addResult(`   ❌ Users collection search failed: ${e.message}`, 'error');
+            }
+
+            // Strategy 3: Known blocks search
+            addResult('📋 Strategy 3: Known blocks search', 'info');
+            const knownBlocks = ['D BLOK', 'E BLOK', 'F BLOK', 'G BLOK', 'H BLOK', 'I BLOK', 'J BLOK'];
+            
+            for (let blockId of knownBlocks) {
+                try {
+                    const blockApartmentsSnapshot = await db.collection('users')
+                        .doc(blockId)
+                        .collection('apartments')
+                        .where('passport_number', '==', passportNumber)
+                        .get();
+
+                    if (blockApartmentsSnapshot.docs.length > 0) {
+                        addResult(`   Block ${blockId}: Found ${blockApartmentsSnapshot.docs.length} apartments`, 'info');
+
+                        for (let doc of blockApartmentsSnapshot.docs) {
+                            const data = doc.data();
+                            const apartmentKey = `${blockId}_${data.apartment_number}`;
+                            
+                            if (!seenApartments.has(apartmentKey)) {
+                                seenApartments.add(apartmentKey);
+                                allApartments.push({
+                                    blockId: blockId,
+                                    apartmentNumber: data.apartment_number,
+                                    path: doc.ref.path,
+                                    source: 'KnownBlocks'
+                                });
+                                addResult(`     ✅ Added: ${blockId} ${data.apartment_number}`, 'success');
+                            } else {
+                                addResult(`     ⚠️ Skipped duplicate: ${blockId} ${data.apartment_number}`, 'warning');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    addResult(`   Block ${blockId}: Does not exist or search failed: ${e.message}`, 'info');
+                }
+            }
+
+            // Final results
+            addResult('🎯 === APARTMENT SEARCH COMPLETED ===', 'info');
+            addResult(`   Total unique apartments found: ${allApartments.length}`, 'success');
+            
+            for (let apt of allApartments) {
+                addResult(`     - ${apt.blockId} ${apt.apartmentNumber} (${apt.source})`, 'info');
+            }
+        }
+    </script>
+</body>
+</html> 

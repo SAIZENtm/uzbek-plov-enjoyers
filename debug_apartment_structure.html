@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Apartment Structure</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <h1>Debug Apartment Structure & Family Request</h1>
+    
+    <div>
+        <h3>1. Check Family Request Data:</h3>
+        <input type="text" id="requestPhoneInput" placeholder="+998952354500" style="width: 200px;">
+        <button onclick="checkFamilyRequest()">Check Family Request</button>
+    </div>
+    
+    <div>
+        <h3>2. Check Apartment Collections Structure:</h3>
+        <button onclick="checkApartmentCollections()">Check All Collections</button>
+    </div>
+    
+    <div>
+        <h3>3. Manual Apartment Search:</h3>
+        <input type="text" id="apartmentIdInput" placeholder="Apartment ID from family request" style="width: 300px;">
+        <button onclick="searchApartmentById()">Search Apartment by ID</button>
+    </div>
+    
+    <div id="results" style="margin-top: 20px; white-space: pre-wrap; font-family: monospace; background: #f5f5f5; padding: 10px; max-height: 500px; overflow-y: auto;"></div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqGI89HHiT8Q8-eBrNZE5RnQb7N-bYm5M",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.appspot.com",
+            messagingSenderId: "266897229357",
+            appId: "1:266897229357:web:7e6e4a73a5e1e4c91d7f8a"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            console.log(message);
+        }
+
+        function clearResults() {
+            document.getElementById('results').textContent = '';
+        }
+
+        async function checkFamilyRequest() {
+            const phone = document.getElementById('requestPhoneInput').value.trim();
+            if (!phone) {
+                log('Please enter a phone number');
+                return;
+            }
+
+            clearResults();
+            log(`🔍 Checking family request for phone: ${phone}`);
+
+            try {
+                // Check both applicantPhone and ownerPhone
+                const applicantQuery = await db.collection('familyRequests')
+                    .where('applicantPhone', '==', phone)
+                    .get();
+                
+                const ownerQuery = await db.collection('familyRequests')
+                    .where('ownerPhone', '==', phone) 
+                    .get();
+                
+                const allDocs = [...applicantQuery.docs, ...ownerQuery.docs];
+                const uniqueDocs = allDocs.filter((doc, index, self) => 
+                    index === self.findIndex(d => d.id === doc.id)
+                );
+                
+                log(`Found ${uniqueDocs.length} family requests (${applicantQuery.docs.length} as applicant, ${ownerQuery.docs.length} as owner)`);
+                
+                uniqueDocs.forEach(doc => {
+                    const data = doc.data();
+                    log(`📋 Family Request ID: ${doc.id}`);
+                    log(`   Status: ${data.status}`);
+                    log(`   Name: ${data.name}`);
+                    log(`   Apartment ID: ${data.apartmentId}`);
+                    log(`   Block ID: ${data.blockId}`);
+                    log(`   Apartment Number: ${data.apartmentNumber}`);
+                    log(`   Owner Phone: ${data.ownerPhone}`);
+                    log(`   Applicant Phone: ${data.applicantPhone}`);
+                    log(`   Created: ${data.createdAt?.toDate()}`);
+                    log(`   Responded: ${data.respondedAt?.toDate()}`);
+                    log(`   Full Data: ${JSON.stringify(data, null, 2)}`);
+                    log('');
+                    
+                    // If approved, check if family member was added to apartment
+                    if (data.status === 'approved' && data.apartmentId) {
+                        log(`🔍 Checking apartment ${data.apartmentId} for family member...`);
+                        checkApartmentForFamilyMember(data.apartmentId, data.name, data.applicantPhone);
+                    }
+                });
+
+            } catch (error) {
+                log(`❌ Error checking family request: ${error.message}`);
+            }
+        }
+
+        async function checkApartmentForFamilyMember(apartmentId, name, phone) {
+            try {
+                // Try direct apartment collection first
+                const apartmentDoc = await db.collection('apartments').doc(apartmentId).get();
+                
+                if (apartmentDoc.exists) {
+                    log(`✅ Found apartment document in 'apartments' collection`);
+                    const data = apartmentDoc.data();
+                    const familyMembers = data.familyMembers || [];
+                    log(`   Apartment has ${familyMembers.length} family members`);
+                    
+                    const memberFound = familyMembers.find(member => 
+                        member.name === name && member.phone === phone
+                    );
+                    
+                    if (memberFound) {
+                        log(`✅ Family member found in apartment!`);
+                        log(`   Member data: ${JSON.stringify(memberFound, null, 2)}`);
+                    } else {
+                        log(`❌ Family member NOT found in apartment familyMembers array`);
+                        log(`   Available family members: ${JSON.stringify(familyMembers, null, 2)}`);
+                    }
+                } else {
+                    log(`❌ Apartment document ${apartmentId} not found in 'apartments' collection`);
+                    
+                    // Try to find it in collection groups or other structures
+                    log(`🔍 Searching in collection groups...`);
+                    const collectionGroupQuery = await db.collectionGroup('apartments')
+                        .where(firebase.firestore.FieldPath.documentId(), '==', apartmentId)
+                        .get();
+                    
+                    if (!collectionGroupQuery.empty) {
+                        log(`✅ Found apartment in collection group`);
+                        collectionGroupQuery.docs.forEach(doc => {
+                            log(`   Path: ${doc.ref.path}`);
+                            const data = doc.data();
+                            const familyMembers = data.familyMembers || [];
+                            log(`   Family members: ${familyMembers.length}`);
+                            
+                            const memberFound = familyMembers.find(member => 
+                                member.name === name && member.phone === phone
+                            );
+                            
+                            if (memberFound) {
+                                log(`✅ Family member found!`);
+                                log(`   Member data: ${JSON.stringify(memberFound, null, 2)}`);
+                            } else {
+                                log(`❌ Family member not found`);
+                            }
+                        });
+                    } else {
+                        log(`❌ Apartment ${apartmentId} not found anywhere`);
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Error checking apartment: ${error.message}`);
+            }
+        }
+
+        async function checkApartmentCollections() {
+            clearResults();
+            log(`🔍 Checking apartment collections structure...`);
+
+            try {
+                // Check apartments collection
+                const apartmentsQuery = await db.collection('apartments').limit(5).get();
+                log(`📂 'apartments' collection: ${apartmentsQuery.docs.length} documents found`);
+                
+                apartmentsQuery.docs.forEach(doc => {
+                    log(`   Doc ID: ${doc.id}`);
+                    const data = doc.data();
+                    log(`   Apartment Number: ${data.apartment_number || data.apartmentNumber}`);
+                    log(`   Family Members: ${(data.familyMembers || []).length}`);
+                });
+                log('');
+
+                // Check collection groups
+                const collectionGroupQuery = await db.collectionGroup('apartments').limit(10).get();
+                log(`📂 Collection group 'apartments': ${collectionGroupQuery.docs.length} documents found`);
+                
+                collectionGroupQuery.docs.forEach(doc => {
+                    log(`   Path: ${doc.ref.path}`);
+                    log(`   Doc ID: ${doc.id}`);
+                    const data = doc.data();
+                    log(`   Apartment Number: ${data.apartment_number || data.apartmentNumber}`);
+                    log(`   Family Members: ${(data.familyMembers || []).length}`);
+                });
+                log('');
+
+                // Check users collection for apartments
+                const usersQuery = await db.collection('users').limit(5).get();
+                log(`📂 'users' collection: ${usersQuery.docs.length} documents found`);
+                
+                usersQuery.docs.forEach(doc => {
+                    log(`   Doc ID: ${doc.id}`);
+                    const data = doc.data();
+                    if (data.apartment_number || data.apartmentNumber) {
+                        log(`   Has apartment data: ${data.apartment_number || data.apartmentNumber}`);
+                        log(`   Family Members: ${(data.familyMembers || []).length}`);
+                    }
+                });
+
+            } catch (error) {
+                log(`❌ Error checking collections: ${error.message}`);
+            }
+        }
+
+        async function searchApartmentById() {
+            const apartmentId = document.getElementById('apartmentIdInput').value.trim();
+            if (!apartmentId) {
+                log('Please enter an apartment ID');
+                return;
+            }
+
+            clearResults();
+            log(`🔍 Searching for apartment: ${apartmentId}`);
+
+            try {
+                // Strategy 1: Direct apartments collection
+                const apartmentDoc = await db.collection('apartments').doc(apartmentId).get();
+                
+                if (apartmentDoc.exists) {
+                    log(`✅ Found in 'apartments' collection`);
+                    const data = apartmentDoc.data();
+                    log(`   Full data: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log(`❌ Not found in 'apartments' collection`);
+                }
+                
+                // Strategy 2: Collection group search
+                const collectionGroupQuery = await db.collectionGroup('apartments')
+                    .where(firebase.firestore.FieldPath.documentId(), '==', apartmentId)
+                    .get();
+                
+                if (!collectionGroupQuery.empty) {
+                    log(`✅ Found in collection group`);
+                    collectionGroupQuery.docs.forEach(doc => {
+                        log(`   Path: ${doc.ref.path}`);
+                        const data = doc.data();
+                        log(`   Data: ${JSON.stringify(data, null, 2)}`);
+                    });
+                } else {
+                    log(`❌ Not found in collection group`);
+                }
+                
+                // Strategy 3: Search in users collection
+                const userDoc = await db.collection('users').doc(apartmentId).get();
+                
+                if (userDoc.exists) {
+                    log(`✅ Found in 'users' collection`);
+                    const data = userDoc.data();
+                    log(`   Full data: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log(`❌ Not found in 'users' collection`);
+                }
+
+            } catch (error) {
+                log(`❌ Error searching apartment: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html> 

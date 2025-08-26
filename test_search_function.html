@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Search Users Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        .log { background: #f5f5f5; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Search Users Function</h1>
+        <input type="text" id="userId" placeholder="Enter User ID (e.g., AD8537918)" style="width: 300px; padding: 5px;">
+        <button class="button" onclick="searchUser()">Search User</button>
+        <button class="button" onclick="clearLogs()">Clear Logs</button>
+        
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const FUNCTION_URL = 'https://us-central1-newport-23a19.cloudfunctions.net/searchUsers';
+        
+        function addLog(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(logDiv);
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        async function searchUser() {
+            const userId = document.getElementById('userId').value.trim();
+            
+            if (!userId) {
+                addLog('❌ Please enter a User ID', 'error');
+                return;
+            }
+            
+            addLog(`🔍 Searching for user: ${userId}`, 'info');
+            
+            try {
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId }),
+                });
+                
+                addLog(`📡 Response status: ${response.status}`, 'info');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                addLog(`✅ Function responded successfully`, 'success');
+                addLog(`📊 Found ${data.results.length} results`, 'info');
+                
+                data.results.forEach((result, index) => {
+                    addLog(`  ${index + 1}. Collection: ${result.collection}, Type: ${result.type}, ID: ${result.data.id}`, 'info');
+                });
+                
+                if (data.results.length === 0) {
+                    addLog('❌ No user found in any collection', 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`, 'error');
+                console.error('Search error:', error);
+            }
+        }
+        
+        // Test function availability on page load
+        window.onload = async function() {
+            addLog('🌐 Testing function availability...', 'info');
+            
+            try {
+                const response = await fetch(FUNCTION_URL, {
+                    method: 'OPTIONS',
+                });
+                
+                if (response.ok) {
+                    addLog('✅ Function is available and CORS is working', 'success');
+                } else {
+                    addLog(`⚠️ Function responded with status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addLog(`❌ Function is not available: ${error.message}`, 'error');
+                addLog('💡 You need to deploy the function first:', 'info');
+                addLog('   cd functions && firebase deploy --only functions:searchUsers', 'info');
+            }
+        };
+    </script>
+</body>
+</html> 

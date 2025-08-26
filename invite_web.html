@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Приглашение в Newport</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        h1 {
+            color: #333;
+            margin: 20px 0;
+            font-size: 24px;
+        }
+        .invite-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .invite-info h3 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+        .invite-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .form-group {
+            margin: 15px 0;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 0;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        .app-download {
+            margin: 20px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 15px;
+        }
+        .app-download h3 {
+            color: #1976d2;
+            margin: 0 0 15px 0;
+        }
+        .store-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .store-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            font-weight: 500;
+            transition: transform 0.3s;
+        }
+        .store-btn:hover {
+            transform: scale(1.05);
+        }
+        .google-play {
+            background: #01875f;
+        }
+        .app-store {
+            background: #000;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+        .steps {
+            text-align: left;
+            margin: 20px 0;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .step-text {
+            flex: 1;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">N</div>
+        <h1>Приглашение в Newport</h1>
+        
+        <!-- Информация о приглашении -->
+        <div class="invite-info" id="inviteInfo">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Загружаем информацию о приглашении...</p>
+            </div>
+        </div>
+
+        <!-- Попытка открыть приложение -->
+        <div id="appLaunch">
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Попытка открыть приложение Newport...</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Если приложение не открылось, скачайте его ниже</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Скачивание приложения -->
+        <div class="app-download" id="appDownload">
+            <h3>📱 Скачать приложение Newport</h3>
+            <p>Для принятия приглашения необходимо установить приложение Newport</p>
+            <div class="store-buttons">
+                <a href="#" class="store-btn google-play" onclick="downloadApp('android')">
+                    📱 Google Play
+                </a>
+                <a href="#" class="store-btn app-store" onclick="downloadApp('ios')">
+                    🍎 App Store
+                </a>
+            </div>
+        </div>
+
+        <!-- Форма регистрации -->
+        <div id="registrationForm" class="hidden">
+            <h3>📝 Регистрация по приглашению</h3>
+            <form id="inviteForm">
+                <div class="form-group">
+                    <label for="fullName">Полное имя:</label>
+                    <input type="text" id="fullName" name="fullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber">Номер телефона:</label>
+                    <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="+7 (999) 123-45-67" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="role">Роль в семье:</label>
+                    <select id="role" name="role" required>
+                        <option value="">Выберите роль</option>
+                        <option value="spouse">Супруг/Супруга</option>
+                        <option value="child">Ребенок</option>
+                        <option value="parent">Родитель</option>
+                        <option value="relative">Родственник</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    ✅ Принять приглашение
+                </button>
+            </form>
+        </div>
+
+        <!-- Альтернативные действия -->
+        <div id="alternativeActions">
+            <button class="btn btn-secondary" onclick="showRegistrationForm()">
+                📝 Заполнить данные сейчас
+            </button>
+            <button class="btn btn-secondary" onclick="copyInviteLink()">
+                📋 Скопировать ссылку
+            </button>
+        </div>
+
+        <!-- Результат -->
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, getDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAk6uswvE34ml59-zG6m-9JExAMRMYwZfE",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "806326874620",
+            appId: "1:806326874620:web:f3b98d2b1b61fc24228279",
+            databaseURL: "https://newport-23a19-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let inviteData = null;
+        let inviteId = null;
+
+        // Получение ID приглашения из URL
+        function getInviteIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteParam = urlParams.get('invite');
+            
+            if (inviteParam) {
+                return inviteParam;
+            }
+            
+            // Альтернативный способ - из hash
+            const hash = window.location.hash.substring(1);
+            if (hash.startsWith('invite/')) {
+                return hash.replace('invite/', '');
+            }
+            
+            // Для тестирования - используем фиксированный ID
+            return 'THZ5RZ9FD3D9DR01';
+        }
+
+        // Загрузка информации о приглашении
+        async function loadInviteInfo() {
+            try {
+                // Аутентификация
+                await signInAnonymously(auth);
+                
+                inviteId = getInviteIdFromUrl();
+                console.log('Loading invite:', inviteId);
+                
+                const inviteRef = doc(db, 'familyInvites', inviteId);
+                const inviteSnap = await getDoc(inviteRef);
+                
+                if (inviteSnap.exists()) {
+                    inviteData = inviteSnap.data();
+                    displayInviteInfo();
+                    attemptAppLaunch();
+                } else {
+                    showError('Приглашение не найдено или истекло');
+                }
+            } catch (error) {
+                console.error('Error loading invite:', error);
+                showError('Ошибка загрузки приглашения: ' + error.message);
+            }
+        }
+
+        // Отображение информации о приглашении
+        function displayInviteInfo() {
+            const inviteInfo = document.getElementById('inviteInfo');
+            inviteInfo.innerHTML = `
+                <h3>👋 Вас приглашает ${inviteData.inviterName}</h3>
+                <p><strong>📍 Адрес:</strong> ${inviteData.blockName}, квартира ${inviteData.apartmentNumber}</p>
+                <p><strong>📞 Телефон:</strong> ${inviteData.inviterPhone}</p>
+                <p><strong>⏰ Создано:</strong> ${new Date(inviteData.createdAt?.seconds * 1000).toLocaleDateString()}</p>
+            `;
+        }
+
+        // Попытка открыть приложение
+        function attemptAppLaunch() {
+            const deepLink = `newport://invite/${inviteId}`;
+            
+            // Создаем скрытую ссылку для запуска приложения
+            const link = document.createElement('a');
+            link.href = deepLink;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            
+            // Попытка открыть приложение
+            setTimeout(() => {
+                link.click();
+                document.body.removeChild(link);
+            }, 1000);
+            
+            // Показать опции скачивания через 3 секунды
+            setTimeout(() => {
+                showAppDownload();
+            }, 3000);
+        }
+
+        // Показать опции скачивания
+        function showAppDownload() {
+            document.getElementById('appDownload').style.display = 'block';
+            document.getElementById('alternativeActions').style.display = 'block';
+        }
+
+        // Скачивание приложения
+        window.downloadApp = function(platform) {
+            const result = document.getElementById('result');
+            
+            if (platform === 'android') {
+                // Перенаправление в Google Play
+                window.open('https://play.google.com/store/apps/details?id=com.newport_resident.app', '_blank');
+                result.innerHTML = `
+                    <div class="success">
+                        📱 Перенаправляем в Google Play...<br>
+                        После установки приложения вернитесь по этой ссылке!
+                    </div>
+                `;
+            } else if (platform === 'ios') {
+                // Перенаправление в App Store
+                window.open('https://apps.apple.com/app/newport-resident/id123456789', '_blank');
+                result.innerHTML = `
+                    <div class="success">
+                        🍎 Перенаправляем в App Store...<br>
+                        После установки приложения вернитесь по этой ссылке!
+                    </div>
+                `;
+            }
+        };
+
+        // Показать форму регистрации
+        window.showRegistrationForm = function() {
+            document.getElementById('registrationForm').classList.remove('hidden');
+            document.getElementById('alternativeActions').style.display = 'none';
+            
+            // Предзаполнение данных из приглашения
+            if (inviteData) {
+                // Можно добавить предзаполнение, если есть данные
+            }
+        };
+
+        // Копирование ссылки приглашения
+        window.copyInviteLink = function() {
+            const inviteLink = `${window.location.origin}${window.location.pathname}?invite=${inviteId}`;
+            
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                const result = document.getElementById('result');
+                result.innerHTML = `
+                    <div class="success">
+                        📋 Ссылка скопирована!<br>
+                        Теперь вы можете поделиться ей с другими.
+                    </div>
+                `;
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showError('Не удалось скопировать ссылку');
+            });
+        };
+
+        // Обработка формы регистрации
+        document.getElementById('inviteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const registrationData = {
+                fullName: formData.get('fullName'),
+                phoneNumber: formData.get('phoneNumber'),
+                role: formData.get('role'),
+                inviteId: inviteId,
+                registeredAt: new Date(),
+                apartmentId: inviteData.apartmentId,
+                blockName: inviteData.blockName,
+                apartmentNumber: inviteData.apartmentNumber,
+                inviterUid: inviteData.inviterUid
+            };
+            
+            try {
+                const result = document.getElementById('result');
+                result.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Обрабатываем регистрацию...</p>
+                    </div>
+                `;
+                
+                // Здесь можно добавить сохранение в Firebase
+                // или отправку на сервер
+                
+                // Обновляем счетчик использований приглашения
+                const inviteRef = doc(db, 'familyInvites', inviteId);
+                await updateDoc(inviteRef, {
+                    usedCount: increment(1)
+                });
+                
+                result.innerHTML = `
+                    <div class="success">
+                        ✅ Регистрация успешна!<br><br>
+                        <strong>Следующие шаги:</strong><br>
+                        1. Скачайте приложение Newport<br>
+                        2. Войдите используя номер телефона<br>
+                        3. Ваш доступ к квартире будет активирован
+                    </div>
+                `;
+                
+                // Скрыть форму
+                document.getElementById('registrationForm').classList.add('hidden');
+                
+            } catch (error) {
+                console.error('Error processing registration:', error);
+                showError('Ошибка при регистрации: ' + error.message);
+            }
+        });
+
+        // Показать ошибку
+        function showError(message) {
+            const inviteInfo = document.getElementById('inviteInfo');
+            inviteInfo.innerHTML = `
+                <div class="error">
+                    ❌ ${message}
+                </div>
+            `;
+        }
+
+        // Инициализация
+        loadInviteInfo();
+    </script>
+</body>
+</html> 

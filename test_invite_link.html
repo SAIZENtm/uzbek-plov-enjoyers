@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест ссылок приглашений - Newport Resident</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .test-section {
+            margin-bottom: 32px;
+            padding: 24px;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+        }
+        .test-section h3 {
+            color: #667eea;
+            margin-bottom: 16px;
+        }
+        .invite-link {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            margin: 16px 0;
+            word-break: break-all;
+        }
+        .invite-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .invite-link a:hover {
+            text-decoration: underline;
+        }
+        .status {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 8px 0;
+        }
+        .status.valid {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.invalid {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin: 8px 4px;
+        }
+        .button:hover {
+            background: #5a6fd8;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Тест системы приглашений Newport Resident</h1>
+        
+        <div class="test-section">
+            <h3>📋 Информация о системе</h3>
+            <p>Эта страница предназначена для тестирования системы приглашений семьи в приложении Newport Resident.</p>
+            <ul>
+                <li><strong>Создание приглашений:</strong> Владельцы квартир могут создавать приглашения для членов семьи</li>
+                <li><strong>Ссылки приглашений:</strong> Каждое приглашение имеет уникальную ссылку с подписью</li>
+                <li><strong>Время действия:</strong> Приглашения действительны в течение 1 часа</li>
+                <li><strong>Безопасность:</strong> Используется HMAC подпись для защиты от подделки</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Примеры ссылок приглашений</h3>
+            
+            <div class="invite-link">
+                <strong>Валидная ссылка:</strong><br>
+                <a href="https://newport-resident.app/invite/abc123?sig=valid_signature" target="_blank">
+                    https://newport-resident.app/invite/abc123?sig=valid_signature
+                </a>
+                <div class="status valid">✅ Валидная ссылка</div>
+            </div>
+
+            <div class="invite-link">
+                <strong>Истекшая ссылка:</strong><br>
+                <a href="https://newport-resident.app/invite/expired123?sig=old_signature" target="_blank">
+                    https://newport-resident.app/invite/expired123?sig=old_signature
+                </a>
+                <div class="status invalid">❌ Ссылка истекла</div>
+            </div>
+
+            <div class="invite-link">
+                <strong>Неверная подпись:</strong><br>
+                <a href="https://newport-resident.app/invite/abc123?sig=invalid_signature" target="_blank">
+                    https://newport-resident.app/invite/abc123?sig=invalid_signature
+                </a>
+                <div class="status invalid">❌ Неверная подпись</div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Тестирование ссылок</h3>
+            
+            <div class="form-group">
+                <label for="inviteUrl">URL приглашения:</label>
+                <input type="url" id="inviteUrl" placeholder="https://newport-resident.app/invite/..." value="https://newport-resident.app/invite/test123?sig=test_signature">
+            </div>
+
+            <button class="button" onclick="testInviteLink()">🔍 Проверить ссылку</button>
+            <button class="button" onclick="openInviteLink()">🚀 Открыть ссылку</button>
+            <button class="button" onclick="copyInviteLink()">📋 Скопировать ссылку</button>
+
+            <div id="testResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Deep Links для мобильного приложения</h3>
+            
+            <div class="invite-link">
+                <strong>Deep Link формат:</strong><br>
+                <code>newportresident://invite/abc123?sig=valid_signature</code>
+            </div>
+
+            <button class="button" onclick="testDeepLink()">📱 Тест Deep Link</button>
+            <button class="button" onclick="copyDeepLink()">📋 Скопировать Deep Link</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Статистика тестирования</h3>
+            <div id="stats">
+                <p><strong>Всего проверено:</strong> <span id="totalTests">0</span></p>
+                <p><strong>Валидных:</strong> <span id="validTests">0</span></p>
+                <p><strong>Невалидных:</strong> <span id="invalidTests">0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testStats = {
+            total: 0,
+            valid: 0,
+            invalid: 0
+        };
+
+        function testInviteLink() {
+            const url = document.getElementById('inviteUrl').value;
+            const resultDiv = document.getElementById('testResult');
+            
+            if (!url) {
+                resultDiv.innerHTML = '<div class="status invalid">❌ Введите URL приглашения</div>';
+                return;
+            }
+
+            // Простая валидация URL
+            const isValid = url.includes('/invite/') && url.includes('?sig=');
+            
+            testStats.total++;
+            if (isValid) {
+                testStats.valid++;
+                resultDiv.innerHTML = '<div class="status valid">✅ Ссылка имеет правильный формат</div>';
+            } else {
+                testStats.invalid++;
+                resultDiv.innerHTML = '<div class="status invalid">❌ Неверный формат ссылки</div>';
+            }
+
+            updateStats();
+        }
+
+        function openInviteLink() {
+            const url = document.getElementById('inviteUrl').value;
+            if (url) {
+                window.open(url, '_blank');
+            }
+        }
+
+        function copyInviteLink() {
+            const url = document.getElementById('inviteUrl').value;
+            if (url) {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('Ссылка скопирована в буфер обмена!');
+                });
+            }
+        }
+
+        function testDeepLink() {
+            const inviteId = 'test123';
+            const signature = 'test_signature';
+            const deepLink = `newportresident://invite/${inviteId}?sig=${signature}`;
+            
+            // Попытка открыть deep link
+            window.location.href = deepLink;
+            
+            // Fallback через 2 секунды
+            setTimeout(() => {
+                alert('Deep link не открылся. Возможно, приложение не установлено.');
+            }, 2000);
+        }
+
+        function copyDeepLink() {
+            const inviteId = 'test123';
+            const signature = 'test_signature';
+            const deepLink = `newportresident://invite/${inviteId}?sig=${signature}`;
+            
+            navigator.clipboard.writeText(deepLink).then(() => {
+                alert('Deep Link скопирован в буфер обмена!');
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalTests').textContent = testStats.total;
+            document.getElementById('validTests').textContent = testStats.valid;
+            document.getElementById('invalidTests').textContent = testStats.invalid;
+        }
+
+        // Инициализация
+        updateStats();
+    </script>
+</body>
+</html> 

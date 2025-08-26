@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Поиск пользователя по блокам</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0050A3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #0050A3;
+        }
+        button {
+            background: #0050A3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #003d82;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .block-section {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0050A3;
+        }
+        .apartment {
+            background: #fff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        .match {
+            background: #d4edda !important;
+            border-color: #28a745 !important;
+        }
+        .preset-btn {
+            background: #28a745;
+            margin: 5px;
+            padding: 8px 16px;
+            width: auto;
+            display: inline-block;
+        }
+        .preset-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Поиск пользователя по блокам</h1>
+        
+        <div class="form-group">
+            <label for="searchPhone">Номер телефона:</label>
+            <input type="text" id="searchPhone" placeholder="+998900000101" value="+998900000101">
+        </div>
+
+        <div class="form-group">
+            <label for="searchPassport">Номер паспорта:</label>
+            <input type="text" id="searchPassport" placeholder="AA2807040" value="AA2807040">
+        </div>
+
+        <div class="form-group">
+            <label for="searchApartment">Номер квартиры (опционально):</label>
+            <input type="text" id="searchApartment" placeholder="101">
+        </div>
+
+        <button class="preset-btn" onclick="searchPreset()">🎯 Поиск тестового пользователя</button>
+        <button onclick="searchUserInAllBlocks()">🔍 Найти пользователя во всех блоках</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, getDocs, query, limit } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5Z_0G2G0kZvF4F0Av_dZRxXNRPPEQ6zM",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.firebasestorage.app",
+            messagingSenderId: "1021151849001",
+            appId: "1:1021151849001:web:eb77b2c0d8d9db78eb5a30",
+            measurementId: "G-4DVZWSP5MY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+
+        window.searchPreset = function() {
+            document.getElementById('searchPhone').value = '+998900000101';
+            document.getElementById('searchPassport').value = 'AA2807040';
+            document.getElementById('searchApartment').value = '101';
+            setTimeout(() => searchUserInAllBlocks(), 100);
+        };
+
+        window.searchUserInAllBlocks = async function() {
+            const resultDiv = document.getElementById('result');
+            const button = document.querySelector('button[onclick="searchUserInAllBlocks()"]');
+            
+            button.disabled = true;
+            button.textContent = '🔄 Ищем...';
+            
+            try {
+                const searchPhone = document.getElementById('searchPhone').value.trim();
+                const searchPassport = document.getElementById('searchPassport').value.trim();
+                const searchApartment = document.getElementById('searchApartment').value.trim();
+                
+                const normalizedPhone = searchPhone.replace(/[^0-9]/g, '');
+                
+                resultDiv.className = 'result info';
+                resultDiv.textContent = '🔄 Поиск пользователя во всех блоках...\n\n';
+
+                let log = '';
+                let foundApartments = [];
+                let totalBlocks = 0;
+                let totalApartments = 0;
+
+                // Сначала получим список всех блоков
+                log += '📋 Получение списка всех блоков...\n';
+                const usersCollection = await getDocs(query(collection(db, 'users'), limit(50)));
+                const allBlocks = usersCollection.docs
+                    .map(doc => doc.id)
+                    .filter(id => id.includes('BLOK') || id.match(/^[A-Z]\d+$/)); // Блоки типа O3, O5
+                
+                log += `✅ Найдено блоков: ${allBlocks.length}\n`;
+                log += `📍 Блоки: ${allBlocks.join(', ')}\n\n`;
+
+                // Поиск в каждом блоке
+                for (const blockId of allBlocks) {
+                    totalBlocks++;
+                    log += `🏠 Поиск в блоке: ${blockId}\n`;
+                    
+                    try {
+                        const apartmentsRef = collection(db, 'users', blockId, 'apartments');
+                        const apartmentsSnap = await getDocs(apartmentsRef);
+                        
+                        if (!apartmentsSnap.empty) {
+                            totalApartments += apartmentsSnap.docs.length;
+                            
+                            for (const aptDoc of apartmentsSnap.docs) {
+                                const data = aptDoc.data();
+                                const aptNumber = aptDoc.id;
+                                
+                                let isMatch = false;
+                                let matchReasons = [];
+                                
+                                // Проверяем совпадения
+                                if (searchPhone && data.phone && data.phone.replace(/[^0-9]/g, '').includes(normalizedPhone)) {
+                                    isMatch = true;
+                                    matchReasons.push('телефон');
+                                }
+                                
+                                if (searchPassport && data.passportNumber && data.passportNumber.includes(searchPassport)) {
+                                    isMatch = true;
+                                    matchReasons.push('паспорт');
+                                }
+                                
+                                if (searchApartment && aptNumber === searchApartment) {
+                                    isMatch = true;
+                                    matchReasons.push('номер квартиры');
+                                }
+                                
+                                if (isMatch) {
+                                    foundApartments.push({
+                                        blockId,
+                                        apartmentNumber: aptNumber,
+                                        data,
+                                        matchReasons
+                                    });
+                                    
+                                    log += `  🎯 НАЙДЕНО! Квартира ${aptNumber}\n`;
+                                    log += `     Совпадение по: ${matchReasons.join(', ')}\n`;
+                                    log += `     Телефон: ${data.phone || 'не указан'}\n`;
+                                    log += `     Паспорт: ${data.passportNumber || 'не указан'}\n`;
+                                    log += `     Имя: ${data.fullName || 'не указано'}\n`;
+                                    log += `     FCM токен: ${data.pushToken ? 'ЕСТЬ' : 'НЕТ'}\n`;
+                                    log += `     FCM токены: ${data.fcmTokens ? data.fcmTokens.length : 0} шт.\n`;
+                                    log += `\n`;
+                                }
+                            }
+                            
+                            log += `  📊 Квартир в блоке: ${apartmentsSnap.docs.length}\n`;
+                        } else {
+                            log += `  📭 Квартир не найдено\n`;
+                        }
+                        
+                    } catch (blockError) {
+                        log += `  ❌ Ошибка в блоке ${blockId}: ${blockError.message}\n`;
+                    }
+                    
+                    log += `\n`;
+                }
+
+                // Итоговый отчет
+                log += `\n📊 ИТОГОВЫЙ ОТЧЕТ:\n`;
+                log += `════════════════════════════════════════════════════\n`;
+                log += `🏗️ Всего блоков: ${totalBlocks}\n`;
+                log += `🏠 Всего квартир: ${totalApartments}\n`;
+                log += `🎯 Найдено совпадений: ${foundApartments.length}\n\n`;
+
+                if (foundApartments.length > 0) {
+                    log += `✅ НАЙДЕННЫЕ КВАРТИРЫ:\n`;
+                    foundApartments.forEach((apt, index) => {
+                        log += `\n${index + 1}. ${apt.blockId}/apartments/${apt.apartmentNumber}\n`;
+                        log += `   Телефон: ${apt.data.phone || 'не указан'}\n`;
+                        log += `   Паспорт: ${apt.data.passportNumber || 'не указан'}\n`;
+                        log += `   Имя: ${apt.data.fullName || 'не указано'}\n`;
+                        log += `   FCM: ${apt.data.pushToken ? 'ЕСТЬ' : 'НЕТ'}\n`;
+                        log += `   Совпадение: ${apt.matchReasons.join(', ')}\n`;
+                    });
+                    
+                    log += `\n🔧 РЕКОМЕНДАЦИИ:\n`;
+                    if (foundApartments.length === 1) {
+                        const apt = foundApartments[0];
+                        log += `✅ Пользователь найден в блоке: ${apt.blockId}\n`;
+                        log += `✅ Квартира: ${apt.apartmentNumber}\n`;
+                        log += `💡 Используйте эти данные для входа в приложение:\n`;
+                        log += `   Блок: ${apt.blockId}\n`;
+                        log += `   Квартира: ${apt.apartmentNumber}\n`;
+                        log += `   Телефон: ${apt.data.phone}\n`;
+                        
+                        if (!apt.data.pushToken) {
+                            log += `\n⚠️ FCM токен отсутствует - добавьте вручную через add_fcm_token_manually.html\n`;
+                        }
+                    } else {
+                        log += `⚠️ Найдено несколько совпадений - выберите правильное\n`;
+                    }
+                    
+                    resultDiv.className = 'result success';
+                } else {
+                    log += `❌ ПОЛЬЗОВАТЕЛЬ НЕ НАЙДЕН!\n`;
+                    log += `\n🔍 Возможные причины:\n`;
+                    log += `1. Пользователь не зарегистрирован в системе\n`;
+                    log += `2. Неверные поисковые данные\n`;
+                    log += `3. Данные хранятся в другом формате\n`;
+                    log += `\n💡 Попробуйте:\n`;
+                    log += `1. Проверить данные пользователя\n`;
+                    log += `2. Создать квартиру через test_create_apartment.html\n`;
+                    log += `3. Поискать по частичным совпадениям\n`;
+                    
+                    resultDiv.className = 'result error';
+                }
+
+                resultDiv.textContent = log;
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка поиска: ${error.message}`;
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔍 Найти пользователя во всех блоках';
+            }
+        };
+
+        // Автоматический поиск при загрузке
+        window.addEventListener('load', () => {
+            setTimeout(searchPreset, 1000);
+        });
+    </script>
+</body>
+</html> 

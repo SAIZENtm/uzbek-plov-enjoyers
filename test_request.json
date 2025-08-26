@@ -1,0 +1,16 @@
+{
+  "userId": "AB1234567",
+  "apartmentNumber": "203",
+  "block": "F BLOK",
+  "requestType": "Electrical",
+  "description": "The light in the kitchen stopped working. It was working fine yesterday but now it doesn't turn on at all. I checked the circuit breaker and it seems fine.",
+  "priority": "High",
+  "contactMethod": "Phone",
+  "preferredTime": "2025-07-09T14:00:00+05:00",
+  "photos": [
+    "https://firebasestorage.googleapis.com/v0/b/newport-23a19/o/images%2Freq1234.jpg?alt=media&token=abc123"
+  ],
+  "status": "new",
+  "createdAt": "2025-07-09T10:38:00+05:00",
+  "updatedAt": "2025-07-09T10:38:00+05:00"
+} 

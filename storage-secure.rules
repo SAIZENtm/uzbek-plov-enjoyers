@@ -1,0 +1,174 @@
+rules_version = '2';
+
+// 🔐 БЕЗОПАСНЫЕ ПРАВИЛА FIREBASE STORAGE
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ===== HELPER ФУНКЦИИ =====
+    
+    // Проверка аутентификации (включая анонимных пользователей)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Проверка что пользователь - администратор
+    function isAdmin() {
+      return isAuthenticated() && 
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Проверка валидности изображения
+    function isValidImage() {
+      return request.resource != null &&
+             request.resource.contentType != null &&
+             request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 10 * 1024 * 1024; // 10MB
+    }
+    
+    // Проверка валидности документа
+    function isValidDocument() {
+      return request.resource != null &&
+             request.resource.contentType != null &&
+             (request.resource.contentType.matches('application/pdf') ||
+              request.resource.contentType.matches('image/.*')) &&
+             request.resource.size < 15 * 1024 * 1024; // 15MB
+    }
+    
+    // Проверка владения показанием счетчика
+    function ownsUtilityReading(readingId) {
+      return isAuthenticated() && 
+        firestore.get(/databases/(default)/documents/utilityReadings/$(readingId)).data.userId == request.auth.uid;
+    }
+    
+    // ===== ПРАВИЛА ДЛЯ ПУТЕЙ =====
+    
+    // 📱 ИЗОБРАЖЕНИЯ СЕРВИСНЫХ ЗАЯВОК
+    // Путь: service_requests/{requestId}/images/{imageId}
+    match /service_requests/{requestId}/images/{imageId} {
+      // Публичное чтение для отображения на сайте
+      allow read: if true;
+      
+      // Запись для всех аутентифицированных (включая анонимных)
+      // Проверяем заявку только если она уже существует
+      allow create: if isAuthenticated() && isValidImage() && (
+        // Разрешаем если заявка не существует (загружаем до создания заявки)
+        !firestore.exists(/databases/(default)/documents/serviceRequests/$(requestId)) ||
+        // Или если пользователь владеет заявкой
+        firestore.get(/databases/(default)/documents/serviceRequests/$(requestId)).data.userId == request.auth.uid
+      );
+      
+      // Обновление: запрещено (иммутабельность)
+      allow update: if false;
+      
+      // Удаление: аутентифицированные пользователи или админ
+      allow delete: if isAuthenticated() || isAdmin();
+    }
+    
+    // 👤 ПРОФИЛЬНЫЕ ИЗОБРАЖЕНИЯ
+    // Путь: users/{userId}/profile/{imageId}
+    match /users/{userId}/profile/{imageId} {
+      // Чтение: владелец профиля или админ
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == userId || isAdmin());
+      
+      // Запись: только владелец профиля, только изображения
+      allow create: if isAuthenticated() && 
+        request.auth.uid == userId && 
+        isValidImage();
+      
+      // Обновление: запрещено
+      allow update: if false;
+      
+      // Удаление: владелец профиля или админ
+      allow delete: if isAuthenticated() && 
+        (request.auth.uid == userId || isAdmin());
+    }
+    
+    // 📊 ИЗОБРАЖЕНИЯ ПОКАЗАНИЙ СЧЕТЧИКОВ
+    // Путь: utility_readings/{readingId}/images/{imageId}
+    match /utility_readings/{readingId}/images/{imageId} {
+      // Чтение: владелец показания или админ
+      allow read: if ownsUtilityReading(readingId) || isAdmin();
+      
+      // Запись: только владелец показания, только изображения
+      allow create: if ownsUtilityReading(readingId) && isValidImage();
+      
+      // Обновление: запрещено
+      allow update: if false;
+      
+      // Удаление: владелец показания или админ
+      allow delete: if ownsUtilityReading(readingId) || isAdmin();
+    }
+    
+    // 📰 АДМИНИСТРАТИВНЫЙ КОНТЕНТ (новости, объявления)
+    // Путь: admin/news/{newsId}/{fileName}
+    match /admin/news/{newsId}/{fileName} {
+      // Чтение: публичное (для опубликованных новостей)
+      allow read: if true;
+      
+      // Запись: только админ
+      allow create, update: if isAdmin() && isValidDocument();
+      
+      // Удаление: только админ
+      allow delete: if isAdmin();
+    }
+    
+    // 📁 ВРЕМЕННЫЕ ЗАГРУЗКИ
+    // Путь: temp/{userId}/{fileName}
+    match /temp/{userId}/{fileName} {
+      // Чтение: только владелец
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Создание: только владелец, ограничение размера
+      allow create: if isAuthenticated() && 
+        request.auth.uid == userId &&
+        request.resource.size < 20 * 1024 * 1024; // 20MB
+      
+      // Обновление: запрещено
+      allow update: if false;
+      
+      // Удаление: владелец (для очистки)
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // 📄 ДОКУМЕНТЫ КВАРТИР (договоры, акты)
+    // Путь: apartments/{apartmentId}/documents/{documentId}
+    match /apartments/{apartmentId}/documents/{documentId} {
+      // Проверка доступа к квартире
+      function hasApartmentAccess() {
+        let apartment = firestore.get(/databases/(default)/documents/apartments/$(apartmentId));
+        return apartment.data.ownerId == request.auth.uid ||
+               request.auth.uid in apartment.data.familyMemberIds;
+      }
+      
+      // Чтение: владелец, члены семьи или админ
+      allow read: if isAuthenticated() && 
+        (hasApartmentAccess() || isAdmin());
+      
+      // Создание: только админ (официальные документы)
+      allow create: if isAdmin() && isValidDocument();
+      
+      // Обновление: запрещено
+      allow update: if false;
+      
+      // Удаление: только админ
+      allow delete: if isAdmin();
+    }
+    
+    // 🏢 ДОКУМЕНТЫ КОМПАНИИ (публичные)
+    // Путь: public/documents/{documentId}
+    match /public/documents/{documentId} {
+      // Чтение: публичное
+      allow read: if true;
+      
+      // Запись: только админ
+      allow write: if isAdmin() && isValidDocument();
+    }
+    
+    // ===== ЗАЩИТА ПО УМОЛЧАНИЮ =====
+    // Все остальные пути запрещены
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

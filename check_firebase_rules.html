@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Диагностика правил Firebase</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 { color: #1f2937; margin-bottom: 20px; }
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin: 16px 0;
+            font-weight: 500;
+        }
+        .alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+        .alert-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+        .alert-warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+        .alert-info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+        
+        .test-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 8px 4px;
+            transition: background-color 0.2s;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { 
+            background: #9ca3af; 
+            cursor: not-allowed; 
+        }
+        .log {
+            background: #111827;
+            color: #f3f4f6;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 16px 0;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #10b981; }
+        .status-error { background: #ef4444; }
+        .status-pending { background: #f59e0b; }
+        
+        .quick-fix {
+            background: #eff6ff;
+            border: 2px solid #3b82f6;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .quick-fix h3 {
+            color: #1e40af;
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .step {
+            margin: 12px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+        .step:before {
+            content: counter(step);
+            counter-increment: step;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #3b82f6;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .steps {
+            counter-reset: step;
+        }
+        
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Диагностика правил Firebase</h1>
+        
+        <div class="alert alert-info">
+            <strong>🎯 Цель:</strong> Проверить состояние правил Firestore и Storage, определить причину блокировки записи в <code>userProfiles</code>
+        </div>
+
+        <div id="authStatus" class="alert alert-warning">
+            <span class="status-indicator status-pending"></span>
+            Инициализация Firebase...
+        </div>
+
+        <div class="test-card">
+            <div class="test-title">🔍 Быстрая диагностика</div>
+            <button onclick="runQuickDiagnosis()">🚀 Запустить полную диагностику</button>
+            <button onclick="testSpecificError()">⚡ Повторить ошибку из приложения</button>
+        </div>
+
+        <div class="test-card">
+            <div class="test-title">📋 Точечные тесты</div>
+            <button onclick="testUserProfilesWrite()">📝 Тест записи userProfiles</button>
+            <button onclick="testUserProfilesRead()">👁 Тест чтения userProfiles</button>
+            <button onclick="testStorageUpload()">📸 Тест Storage</button>
+            <button onclick="testAuthToken()">🔐 Тест Auth токена</button>
+        </div>
+
+        <div id="results"></div>
+        
+        <div class="quick-fix">
+            <h3>⚡ Быстрое решение</h3>
+            <div class="steps">
+                <div class="step">Откройте <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></div>
+                <div class="step">Выберите проект <strong>newport-23a19</strong></div>
+                <div class="step">Firestore Database → Rules</div>
+                <div class="step">Замените все содержимое на: <code>allow read, write: if true;</code></div>
+                <div class="step">Нажмите <strong>Publish</strong></div>
+            </div>
+        </div>
+
+        <div class="log" id="logContainer">Ожидание команд...\n</div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="clearLog()" style="background: #6b7280;">🗑 Очистить лог</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVy8OhKiDW8CPOJ2yUnx-ov5WkOYa8WMg",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "254421846823",
+            appId: "1:254421846823:web:8f1742dfd38b0b38bce866"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const firestore = getFirestore(app);
+        const storage = getStorage(app);
+
+        let currentUser = null;
+
+        // Логирование
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#60a5fa',
+                success: '#34d399', 
+                error: '#f87171',
+                warning: '#fbbf24'
+            };
+            
+            logContainer.innerHTML += `<span style="color: ${colors[type]};">[${timestamp}] ${message}</span>\n`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function showResult(message, type, details = '') {
+            const results = document.getElementById('results');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            
+            const indicator = type === 'success' ? 'status-success' : 
+                            type === 'error' ? 'status-error' : 'status-pending';
+                            
+            alert.innerHTML = `
+                <span class="status-indicator ${indicator}"></span>
+                <strong>${message}</strong>
+                ${details ? `<div style="margin-top: 8px; font-weight: normal;">${details}</div>` : ''}
+            `;
+            results.appendChild(alert);
+        }
+
+        window.clearLog = () => {
+            document.getElementById('logContainer').innerHTML = 'Лог очищен...\n';
+            document.getElementById('results').innerHTML = '';
+        };
+
+        // Аутентификация  
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const authStatus = document.getElementById('authStatus');
+            
+            if (user) {
+                authStatus.className = 'alert alert-success';
+                authStatus.innerHTML = `
+                    <span class="status-indicator status-success"></span>
+                    Аутентифицирован: <code>${user.uid}</code> (${user.isAnonymous ? 'анонимно' : 'обычно'})
+                `;
+                log(`✅ Auth OK: ${user.uid.substring(0,8)}... (анонимно: ${user.isAnonymous})`, 'success');
+            } else {
+                authStatus.className = 'alert alert-warning';
+                authStatus.innerHTML = `
+                    <span class="status-indicator status-pending"></span>
+                    Выполняется аутентификация...
+                `;
+                
+                signInAnonymously(auth).catch((error) => {
+                    authStatus.className = 'alert alert-error';
+                    authStatus.innerHTML = `
+                        <span class="status-indicator status-error"></span>
+                        Ошибка аутентификации: ${error.message}
+                    `;
+                    log(`❌ Auth failed: ${error.message}`, 'error');
+                });
+            }
+        });
+
+        // Быстрая диагностика
+        window.runQuickDiagnosis = async function() {
+            log('🚀 Запуск полной диагностики...', 'info');
+            clearLog();
+            
+            const tests = [
+                { name: 'Аутентификация', func: testAuth },
+                { name: 'Запись userProfiles', func: testUserProfilesWrite },
+                { name: 'Чтение userProfiles', func: testUserProfilesRead },
+                { name: 'Storage upload', func: testStorageUpload }
+            ];
+
+            for (const test of tests) {
+                try {
+                    log(`🔄 Тест: ${test.name}`, 'info');
+                    await test.func();
+                    log(`✅ ${test.name}: ПРОШЕЛ`, 'success');
+                } catch (error) {
+                    log(`❌ ${test.name}: ПРОВАЛЕН - ${error.message}`, 'error');
+                }
+            }
+            
+            showResult('Диагностика завершена', 'info', 'Проверьте лог для деталей');
+        };
+
+        // Повторение точной ошибки из приложения
+        window.testSpecificError = async function() {
+            if (!currentUser) {
+                showResult('Ошибка', 'error', 'Пользователь не аутентифицирован');
+                return;
+            }
+
+            log('⚡ Повторяем точную ошибку из приложения...', 'warning');
+            
+            // Тест 1: По UID (как в первой ошибке)
+            try {
+                log(`🔄 Тест 1: Запись по UID ${currentUser.uid}`, 'info');
+                
+                const userDoc = doc(firestore, 'userProfiles', currentUser.uid);
+                await setDoc(userDoc, {
+                    uid: currentUser.uid,
+                    fullName: 'OTABEK USKENBAYEV SAIDAXMAD O\'G\'LI',
+                    phone: '+998999357706',
+                    role: 'resident',
+                    apartmentNumber: '203',
+                    blockId: 'F',
+                    lastLogin: serverTimestamp(),
+                    createdAt: serverTimestamp(),
+                    isAnonymous: currentUser.isAnonymous,
+                    dataSource: 'web_diagnostic_uid'
+                }, { merge: true });
+                
+                log('✅ Запись по UID успешна!', 'success');
+                showResult('Тест по UID прошел', 'success');
+                
+            } catch (error) {
+                log(`❌ Запись по UID провалена: ${error.message}`, 'error');
+                showResult('Тест по UID провален', 'error', `Код: ${error.code}, Сообщение: ${error.message}`);
+            }
+
+            // Тест 2: По паспорту (как во второй ошибке)
+            try {
+                log('🔄 Тест 2: Запись по паспорту AD2444681', 'info');
+                
+                const passportDoc = doc(firestore, 'userProfiles', 'AD2444681');
+                await setDoc(passportDoc, {
+                    uid: currentUser.uid,
+                    passportNumber: 'AD2444681',
+                    fullName: 'OTABEK USKENBAYEV SAIDAXMAD O\'G\'LI',
+                    phone: '+998999357706',
+                    role: 'resident',
+                    apartmentNumber: '203',
+                    blockId: 'F',
+                    lastLogin: serverTimestamp(),
+                    createdAt: serverTimestamp(),
+                    dataSource: 'web_diagnostic_passport'
+                }, { merge: true });
+                
+                log('✅ Запись по паспорту успешна!', 'success');
+                showResult('Тест по паспорту прошел', 'success');
+                
+            } catch (error) {
+                log(`❌ Запись по паспорту провалена: ${error.message}`, 'error');
+                showResult('Тест по паспорту провален', 'error', `Код: ${error.code}, Сообщение: ${error.message}`);
+            }
+        };
+
+        // Индивидуальные тесты
+        async function testAuth() {
+            if (!currentUser) throw new Error('Пользователь не аутентифицирован');
+            const token = await currentUser.getIdToken();
+            log(`Auth токен получен (${token.length} символов)`, 'success');
+        }
+
+        window.testUserProfilesWrite = async function() {
+            try {
+                await testAuth();
+                
+                const testDoc = doc(firestore, 'userProfiles', 'test_' + Date.now());
+                await setDoc(testDoc, {
+                    test: true,
+                    timestamp: serverTimestamp(),
+                    user: currentUser.uid
+                });
+                
+                log('✅ Запись в userProfiles работает!', 'success');
+                showResult('Запись userProfiles', 'success');
+            } catch (error) {
+                log(`❌ Запись userProfiles: ${error.message}`, 'error');
+                showResult('Запись userProfiles', 'error', error.message);
+            }
+        };
+
+        window.testUserProfilesRead = async function() {
+            try {
+                const testDoc = doc(firestore, 'userProfiles', 'AD2444681');
+                const docSnap = await getDoc(testDoc);
+                
+                if (docSnap.exists()) {
+                    log('✅ Чтение userProfiles работает, документ найден', 'success');
+                    showResult('Чтение userProfiles', 'success', 'Документ найден');
+                } else {
+                    log('⚠️ Чтение работает, но документ не найден', 'warning');
+                    showResult('Чтение userProfiles', 'warning', 'Документ не найден');
+                }
+            } catch (error) {
+                log(`❌ Чтение userProfiles: ${error.message}`, 'error');
+                showResult('Чтение userProfiles', 'error', error.message);
+            }
+        };
+
+        window.testStorageUpload = async function() {
+            try {
+                await testAuth();
+                
+                const testData = new Blob(['test'], { type: 'text/plain' });
+                const testRef = ref(storage, `test/${Date.now()}/test.txt`);
+                await uploadBytes(testRef, testData);
+                
+                log('✅ Storage upload работает!', 'success');
+                showResult('Storage upload', 'success');
+            } catch (error) {
+                log(`❌ Storage upload: ${error.message}`, 'error');
+                showResult('Storage upload', 'error', error.message);
+            }
+        };
+
+        window.testAuthToken = async function() {
+            try {
+                await testAuth();
+                showResult('Auth токен', 'success', 'Токен получен успешно');
+            } catch (error) {
+                showResult('Auth токен', 'error', error.message);
+            }
+        };
+    </script>
+</body>
+</html> 

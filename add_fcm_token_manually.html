@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>➕ Добавить FCM токен вручную</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0050A3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f39c12;
+            background: #fff3cd;
+            color: #856404;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #0050A3;
+        }
+        textarea {
+            height: 120px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #0050A3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #003d82;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .preset-btn {
+            background: #28a745;
+            margin: 5px;
+            padding: 8px 16px;
+            width: auto;
+            display: inline-block;
+        }
+        .preset-btn:hover {
+            background: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0050A3;
+        }
+        .step h4 {
+            margin: 0 0 10px 0;
+            color: #0050A3;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>➕ Добавить FCM токен вручную</h1>
+        
+        <div class="alert">
+            ⚠️ <strong>Внимание:</strong> Используйте этот инструмент только если FCM токен не сохраняется автоматически из-за сетевых проблем.
+        </div>
+
+        <div class="step">
+            <h4>📱 Шаг 1: Получить FCM токен</h4>
+            <p>Добавьте в мобильное приложение временную кнопку для получения токена:</p>
+            <div class="code">FloatingActionButton(
+  onPressed: () async {
+    final token = await FirebaseMessaging.instance.getToken();
+    print('FCM Token: $token');
+    // Скопируйте токен из консоли
+  },
+  child: Icon(Icons.token),
+)</div>
+        </div>
+
+        <div class="step">
+            <h4>💾 Шаг 2: Заполнить данные</h4>
+            <p>Введите данные пользователя и FCM токен:</p>
+        </div>
+
+        <div class="form-group">
+            <label for="blockId">ID блока:</label>
+            <input type="text" id="blockId" placeholder="Например: BLOK A" value="BLOK A">
+        </div>
+
+        <div class="form-group">
+            <label for="apartmentNumber">Номер квартиры:</label>
+            <input type="text" id="apartmentNumber" placeholder="Например: 101" value="101">
+        </div>
+
+        <div class="form-group">
+            <label for="phoneNumber">Номер телефона:</label>
+            <input type="text" id="phoneNumber" placeholder="Например: +998900000101" value="+998900000101">
+        </div>
+
+        <div class="form-group">
+            <label for="passportNumber">Номер паспорта:</label>
+            <input type="text" id="passportNumber" placeholder="Например: AA2807040" value="AA2807040">
+        </div>
+
+        <div class="form-group">
+            <label for="fullName">Полное имя:</label>
+            <input type="text" id="fullName" placeholder="Например: Иван Иванов" value="Test User">
+        </div>
+
+        <div class="form-group">
+            <label for="fcmToken">FCM токен:</label>
+            <textarea id="fcmToken" placeholder="Вставьте FCM токен полученный из мобильного приложения..."></textarea>
+        </div>
+
+        <button class="preset-btn" onclick="generateTestToken()">🧪 Генерировать тестовый токен</button>
+        <button onclick="addFCMToken()">💾 Добавить FCM токен в базу</button>
+
+        <div id="result"></div>
+
+        <div class="step">
+            <h4>✅ Шаг 3: Проверить результат</h4>
+            <p>После добавления токена:</p>
+            <ol>
+                <li>Откройте <strong>check_fcm_status.html</strong></li>
+                <li>Проверьте что токен сохранился</li>
+                <li>Протестируйте push уведомления</li>
+            </ol>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, doc, setDoc, updateDoc, getDoc, FieldValue, serverTimestamp, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5Z_0G2G0kZvF4F0Av_dZRxXNRPPEQ6zM",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.firebasestorage.app",
+            messagingSenderId: "1021151849001",
+            appId: "1:1021151849001:web:eb77b2c0d8d9db78eb5a30",
+            measurementId: "G-4DVZWSP5MY"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+
+        window.generateTestToken = function() {
+            // Генерируем реалистичный тестовый FCM токен
+            const prefix = 'f5K9_Q8XnNY:APA91b';
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+            let token = prefix;
+            
+            for (let i = 0; i < 150; i++) {
+                token += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            document.getElementById('fcmToken').value = token;
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '🧪 Тестовый FCM токен сгенерирован!\n\n⚠️ Это НЕ настоящий токен - используйте для тестирования структуры данных.';
+        };
+
+        window.addFCMToken = async function() {
+            const resultDiv = document.getElementById('result');
+            const button = document.querySelector('button[onclick="addFCMToken()"]');
+            
+            button.disabled = true;
+            button.textContent = '💾 Сохраняем...';
+            
+            try {
+                // Получаем данные из формы
+                const blockId = document.getElementById('blockId').value.trim();
+                const apartmentNumber = document.getElementById('apartmentNumber').value.trim();
+                const phoneNumber = document.getElementById('phoneNumber').value.trim();
+                const passportNumber = document.getElementById('passportNumber').value.trim();
+                const fullName = document.getElementById('fullName').value.trim();
+                const fcmToken = document.getElementById('fcmToken').value.trim();
+
+                // Валидация
+                if (!blockId || !apartmentNumber || !fcmToken) {
+                    throw new Error('Заполните блок, квартиру и FCM токен');
+                }
+
+                if (fcmToken.length < 100) {
+                    throw new Error('FCM токен слишком короткий. Проверьте что скопировали полный токен.');
+                }
+
+                const normalizedPhone = phoneNumber.replace(/[^0-9]/g, '');
+                
+                resultDiv.className = 'result info';
+                resultDiv.textContent = '💾 Сохраняем FCM токен...\n\n';
+
+                let log = '';
+
+                // 1. Сохраняем в документ квартиры
+                log += '📍 Сохранение в документ квартиры...\n';
+                const apartmentRef = doc(db, 'users', blockId, 'apartments', apartmentNumber);
+                
+                // Проверяем существует ли документ
+                const apartmentDoc = await getDoc(apartmentRef);
+                
+                if (apartmentDoc.exists()) {
+                    log += '✅ Документ квартиры найден, обновляем...\n';
+                    await updateDoc(apartmentRef, {
+                        pushToken: fcmToken,
+                        fcmTokens: arrayUnion(fcmToken),
+                        lastTokenUpdate: serverTimestamp(),
+                        lastPushTokenUpdate: serverTimestamp(),
+                        // Добавляем дополнительную информацию если её нет
+                        phone: phoneNumber || apartmentDoc.data().phone,
+                        passportNumber: passportNumber || apartmentDoc.data().passportNumber,
+                        fullName: fullName || apartmentDoc.data().fullName,
+                        manualFCMUpdate: true,
+                        manualFCMDate: new Date().toISOString()
+                    });
+                } else {
+                    log += '⚠️ Документ квартиры не найден, создаем новый...\n';
+                    await setDoc(apartmentRef, {
+                        pushToken: fcmToken,
+                        fcmTokens: [fcmToken],
+                        lastTokenUpdate: serverTimestamp(),
+                        lastPushTokenUpdate: serverTimestamp(),
+                        phone: phoneNumber,
+                        passportNumber: passportNumber,
+                        fullName: fullName,
+                        apartmentNumber: apartmentNumber,
+                        blockId: blockId,
+                        manualFCMCreation: true,
+                        manualFCMDate: new Date().toISOString(),
+                        createdAt: serverTimestamp()
+                    });
+                }
+                log += `✅ Сохранено: users/${blockId}/apartments/${apartmentNumber}\n\n`;
+
+                // 2. Сохраняем в коллекцию fcm_tokens (по телефону)
+                if (normalizedPhone) {
+                    log += '📱 Сохранение в коллекцию fcm_tokens...\n';
+                    const fcmTokensRef = doc(db, 'fcm_tokens', normalizedPhone);
+                    await setDoc(fcmTokensRef, {
+                        tokens: arrayUnion(fcmToken),
+                        passportNumber: passportNumber,
+                        phoneNumber: phoneNumber,
+                        lastTokenUpdate: serverTimestamp(),
+                        blockId: blockId,
+                        apartmentNumber: apartmentNumber,
+                        fullName: fullName,
+                        manualUpdate: true,
+                        manualUpdateDate: new Date().toISOString()
+                    }, { merge: true });
+                    log += `✅ Сохранено: fcm_tokens/${normalizedPhone}\n\n`;
+                }
+
+                // 3. Сохраняем в коллекцию users (по паспорту)
+                if (passportNumber) {
+                    log += '🆔 Сохранение в коллекцию users...\n';
+                    const userRef = doc(db, 'users', passportNumber);
+                    await setDoc(userRef, {
+                        fcmTokens: arrayUnion(fcmToken),
+                        lastTokenUpdate: serverTimestamp(),
+                        blockId: blockId,
+                        apartmentNumber: apartmentNumber,
+                        phone: phoneNumber,
+                        passportNumber: passportNumber,
+                        fullName: fullName,
+                        manualUpdate: true,
+                        manualUpdateDate: new Date().toISOString()
+                    }, { merge: true });
+                    log += `✅ Сохранено: users/${passportNumber}\n\n`;
+                }
+
+                // Финальная проверка
+                log += '🔍 Проверяем сохранение...\n';
+                const finalCheck = await getDoc(apartmentRef);
+                if (finalCheck.exists()) {
+                    const data = finalCheck.data();
+                    const savedPushToken = data.pushToken;
+                    const savedFcmTokens = data.fcmTokens || [];
+                    
+                    log += `✅ pushToken: ${savedPushToken ? 'СОХРАНЕН' : 'НЕТ'}\n`;
+                    log += `✅ fcmTokens: ${savedFcmTokens.length} токенов\n`;
+                    log += `✅ Общее количество полей: ${Object.keys(data).length}\n\n`;
+                    
+                    if (savedPushToken && savedFcmTokens.includes(fcmToken)) {
+                        log += '🎉 УСПЕХ! FCM токен успешно сохранен во всех местах!\n\n';
+                        log += '📋 Следующие шаги:\n';
+                        log += '1. Откройте check_fcm_status.html для проверки\n';
+                        log += '2. Протестируйте push уведомления\n';
+                        log += '3. Проверьте работу в мобильном приложении\n\n';
+                        log += `🔗 Токен сохранен в:\n`;
+                        log += `   📍 users/${blockId}/apartments/${apartmentNumber}/pushToken\n`;
+                        if (normalizedPhone) {
+                            log += `   📱 fcm_tokens/${normalizedPhone}/tokens[]\n`;
+                        }
+                        if (passportNumber) {
+                            log += `   🆔 users/${passportNumber}/fcmTokens[]\n`;
+                        }
+                        
+                        resultDiv.className = 'result success';
+                    } else {
+                        log += '❌ ОШИБКА: Токен не был сохранен правильно\n';
+                        resultDiv.className = 'result error';
+                    }
+                } else {
+                    log += '❌ ОШИБКА: Документ квартиры не найден после сохранения\n';
+                    resultDiv.className = 'result error';
+                }
+
+                resultDiv.textContent = log;
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Ошибка сохранения: ${error.message}\n\nПроверьте:\n1. Корректность данных\n2. Подключение к интернету\n3. Права доступа к Firebase`;
+            } finally {
+                button.disabled = false;
+                button.textContent = '💾 Добавить FCM токен в базу';
+            }
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Тест загрузки фотографий</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 { color: #2d3748; margin-bottom: 30px; }
+        .status { padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .success { background: #c6f6d5; color: #2f855a; }
+        .error { background: #fed7d7; color: #c53030; }
+        .info { background: #bee3f8; color: #2b6cb0; }
+        .warning { background: #faf089; color: #975a16; }
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover { border-color: #4299e1; background: #f7fafc; }
+        .upload-area.dragover { border-color: #3182ce; background: #ebf8ff; }
+        input[type="file"] { display: none; }
+        button {
+            background: #4299e1;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #3182ce; }
+        button:disabled { background: #a0aec0; cursor: not-allowed; }
+        .progress { 
+            width: 100%; 
+            height: 4px; 
+            background: #e2e8f0; 
+            border-radius: 2px; 
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar { 
+            height: 100%; 
+            background: #4299e1; 
+            width: 0%; 
+            transition: width 0.3s ease;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .auth-info {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Тест загрузки фотографий в Firebase Storage</h1>
+        
+        <div id="authStatus" class="info">
+            🔄 Инициализация Firebase...
+        </div>
+
+        <div class="auth-info">
+            <strong>ℹ️ Информация:</strong>
+            <ul>
+                <li>Этот тест проверяет загрузку фотографий напрямую в Firebase Storage</li>
+                <li>Используется анонимная аутентификация (как в мобильном приложении)</li>
+                <li>Фотографии загружаются по пути <code>service_requests/{requestId}/images/</code></li>
+            </ul>
+        </div>
+
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            📸 Нажмите или перетащите фотографии сюда<br>
+            <small>Поддерживаются JPG, PNG, до 10MB</small>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*" multiple>
+        
+        <div class="progress" style="display: none;">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div id="previewContainer"></div>
+
+        <div id="results"></div>
+
+        <div class="log" id="logContainer">
+            Лог операций появится здесь...
+        </div>
+
+        <button onclick="testRules()">🧪 Проверить правила Storage</button>
+        <button onclick="clearLog()">🗑️ Очистить лог</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        // Firebase конфигурация (замените на свою)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVy8OhKiDW8CPOJ2yUnx-ov5WkOYa8WMg",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "254421846823",
+            appId: "1:254421846823:web:8f1742dfd38b0b38bce866"
+        };
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+
+        let currentUser = null;
+
+        // Функции для лога
+        window.log = function(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorMap = {
+                'info': '#4299e1',
+                'success': '#48bb78',
+                'error': '#f56565',
+                'warning': '#ed8936'
+            };
+            
+            logContainer.innerHTML += `<div style="color: ${colorMap[type]};">[${timestamp}] ${message}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        };
+
+        window.clearLog = function() {
+            document.getElementById('logContainer').innerHTML = 'Лог очищен...';
+        };
+
+        // Аутентификация
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const authStatus = document.getElementById('authStatus');
+            
+            if (user) {
+                authStatus.className = 'status success';
+                authStatus.innerHTML = `✅ Аутентифицирован анонимно: ${user.uid}`;
+                log(`Аутентифицирован как: ${user.uid}`, 'success');
+            } else {
+                authStatus.className = 'status warning';
+                authStatus.innerHTML = '🔄 Выполняется анонимная аутентификация...';
+                
+                signInAnonymously(auth)
+                    .then(() => {
+                        log('Анонимная аутентификация успешна', 'success');
+                    })
+                    .catch((error) => {
+                        authStatus.className = 'status error';
+                        authStatus.innerHTML = `❌ Ошибка аутентификации: ${error.message}`;
+                        log(`Ошибка аутентификации: ${error.message}`, 'error');
+                    });
+            }
+        });
+
+        // Обработка выбора файлов
+        document.getElementById('fileInput').addEventListener('change', handleFiles);
+        
+        // Drag & Drop
+        const uploadArea = document.querySelector('.upload-area');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            handleFileList(files);
+        });
+
+        function handleFiles(event) {
+            const files = Array.from(event.target.files);
+            handleFileList(files);
+        }
+
+        function handleFileList(files) {
+            if (!currentUser) {
+                log('Ошибка: пользователь не аутентифицирован', 'error');
+                return;
+            }
+
+            files.forEach((file, index) => {
+                uploadFile(file, index);
+            });
+        }
+
+        function uploadFile(file, index) {
+            log(`Начинаем загрузку: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'info');
+            
+            // Проверка размера файла
+            if (file.size > 10 * 1024 * 1024) {
+                log(`Ошибка: файл ${file.name} слишком большой (> 10MB)`, 'error');
+                return;
+            }
+
+            // Проверка типа файла
+            if (!file.type.startsWith('image/')) {
+                log(`Ошибка: ${file.name} не является изображением`, 'error');
+                return;
+            }
+
+            // Показываем превью
+            showPreview(file);
+
+            // Создаем путь для загрузки
+            const requestId = Date.now().toString();
+            const fileName = `image_${index + 1}_${requestId}.${file.name.split('.').pop()}`;
+            const storagePath = `service_requests/${requestId}/images/${fileName}`;
+            
+            log(`Путь загрузки: ${storagePath}`, 'info');
+
+            // Создаем референс и загружаем
+            const storageRef = ref(storage, storagePath);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            // Показываем прогресс
+            const progressContainer = document.querySelector('.progress');
+            const progressBar = document.getElementById('progressBar');
+            progressContainer.style.display = 'block';
+
+            uploadTask.on('state_changed',
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    progressBar.style.width = progress + '%';
+                    log(`Загрузка ${file.name}: ${progress.toFixed(1)}%`, 'info');
+                },
+                (error) => {
+                    progressContainer.style.display = 'none';
+                    log(`❌ Ошибка загрузки ${file.name}: ${error.message}`, 'error');
+                    
+                    // Подробная информация об ошибке
+                    if (error.code) {
+                        log(`Код ошибки: ${error.code}`, 'error');
+                    }
+                    
+                    showResult(`❌ ${file.name}: ${error.message}`, 'error');
+                },
+                () => {
+                    progressContainer.style.display = 'none';
+                    
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        log(`✅ ${file.name} загружен успешно!`, 'success');
+                        log(`URL: ${downloadURL}`, 'success');
+                        showResult(`✅ ${file.name}: Успешно загружено`, 'success');
+                    });
+                }
+            );
+        }
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewContainer = document.getElementById('previewContainer');
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'image-preview';
+                img.alt = file.name;
+                previewContainer.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showResult(message, type) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        // Тест правил
+        window.testRules = async function() {
+            if (!currentUser) {
+                log('Ошибка: пользователь не аутентифицирован', 'error');
+                return;
+            }
+
+            log('Тестируем правила Storage...', 'info');
+            
+            try {
+                // Тест 1: Попытка чтения несуществующего файла
+                const testRef = ref(storage, 'service_requests/test/images/test.jpg');
+                
+                try {
+                    await getDownloadURL(testRef);
+                    log('❌ Неожиданно: смогли прочитать несуществующий файл', 'error');
+                } catch (error) {
+                    if (error.code === 'storage/object-not-found') {
+                        log('✅ Правила работают: файл не найден (это нормально)', 'success');
+                    } else {
+                        log(`⚠️ Неожиданная ошибка чтения: ${error.message}`, 'warning');
+                    }
+                }
+
+                log('Правила Storage протестированы', 'success');
+                
+            } catch (error) {
+                log(`Ошибка тестирования правил: ${error.message}`, 'error');
+            }
+        };
+    </script>
+</body>
+</html> 

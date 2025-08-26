@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Family Data</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <h1>Debug Family Data</h1>
+    <div>
+        <h3>Search by Phone Number:</h3>
+        <input type="text" id="phoneInput" placeholder="+998902222222" style="width: 200px;">
+        <button onclick="searchByPhone()">Search</button>
+    </div>
+    <div>
+        <h3>Search by Apartment:</h3>
+        <input type="text" id="apartmentInput" placeholder="01-222" style="width: 200px;">
+        <button onclick="searchByApartment()">Search</button>
+    </div>
+    <div id="results" style="margin-top: 20px; white-space: pre-wrap; font-family: monospace; background: #f5f5f5; padding: 10px;"></div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqGI89HHiT8Q8-eBrNZE5RnQb7N-bYm5M",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.appspot.com",
+            messagingSenderId: "266897229357",
+            appId: "1:266897229357:web:7e6e4a73a5e1e4c91d7f8a"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        function log(message) {
+            const results = document.getElementById('results');
+            results.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            console.log(message);
+        }
+
+        async function searchByPhone() {
+            const phone = document.getElementById('phoneInput').value.trim();
+            if (!phone) {
+                log('Please enter a phone number');
+                return;
+            }
+
+            document.getElementById('results').textContent = '';
+            log(`🔍 Searching for phone: ${phone}`);
+
+            try {
+                // Search in apartments collection
+                const apartmentsQuery = await db.collectionGroup('apartments').get();
+                
+                log(`Found ${apartmentsQuery.docs.length} total apartments to check`);
+                
+                let foundCount = 0;
+                
+                apartmentsQuery.docs.forEach(doc => {
+                    const data = doc.data();
+                    const apartmentNumber = data.apartment_number || data.apartmentNumber || 'Unknown';
+                    
+                    // Check apartment owner phone
+                    const ownerPhone = data.phone;
+                    if (ownerPhone === phone) {
+                        foundCount++;
+                        log(`✅ Found as OWNER in apartment ${apartmentNumber}: ${data.full_name || data.fullName}`);
+                        log(`   Data: ${JSON.stringify(data, null, 2)}`);
+                    }
+                    
+                    // Check family members
+                    const familyMembers = data.familyMembers || [];
+                    familyMembers.forEach((member, index) => {
+                        if (member.phone === phone) {
+                            foundCount++;
+                            log(`✅ Found as FAMILY MEMBER #${index + 1} in apartment ${apartmentNumber}:`);
+                            log(`   Name: ${member.name}`);
+                            log(`   Role: ${member.role}`);
+                            log(`   Phone: ${member.phone}`);
+                            log(`   Approved: ${member.isApproved}`);
+                            log(`   Member Data: ${JSON.stringify(member, null, 2)}`);
+                            log(`   Full Apartment Data: ${JSON.stringify(data, null, 2)}`);
+                        }
+                    });
+                });
+
+                if (foundCount === 0) {
+                    log(`❌ No matches found for phone ${phone}`);
+                    log('🔍 Try checking these variations:');
+                    if (phone.startsWith('+')) {
+                        log(`   Without +: ${phone.substring(1)}`);
+                    } else {
+                        log(`   With +: +${phone}`);
+                    }
+                }
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+
+        async function searchByApartment() {
+            const apartmentNumber = document.getElementById('apartmentInput').value.trim();
+            if (!apartmentNumber) {
+                log('Please enter apartment number');
+                return;
+            }
+
+            document.getElementById('results').textContent = '';
+            log(`🔍 Searching for apartment: ${apartmentNumber}`);
+
+            try {
+                const query = await db.collectionGroup('apartments')
+                    .where('apartment_number', '==', apartmentNumber)
+                    .get();
+                
+                if (query.empty) {
+                    log(`❌ No apartment found with number: ${apartmentNumber}`);
+                    return;
+                }
+
+                query.docs.forEach(doc => {
+                    const data = doc.data();
+                    const blockId = doc.ref.parent.parent?.id || 'Unknown';
+                    
+                    log(`✅ Found apartment ${apartmentNumber} in block ${blockId}`);
+                    log(`   Owner: ${data.full_name || data.fullName || 'Unknown'}`);
+                    log(`   Owner Phone: ${data.phone || 'Unknown'}`);
+                    
+                    const familyMembers = data.familyMembers || [];
+                    log(`   Family Members: ${familyMembers.length}`);
+                    
+                    familyMembers.forEach((member, index) => {
+                        log(`   Member ${index + 1}:`);
+                        log(`     Name: ${member.name}`);
+                        log(`     Role: ${member.role}`);
+                        log(`     Phone: ${member.phone}`);
+                        log(`     Approved: ${member.isApproved}`);
+                        log(`     Created: ${member.createdAt ? new Date(member.createdAt.seconds * 1000).toLocaleString() : 'Unknown'}`);
+                        log(`     Data: ${JSON.stringify(member, null, 2)}`);
+                    });
+                    
+                    log(`\nFull apartment data:`);
+                    log(JSON.stringify(data, null, 2));
+                });
+
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html> 

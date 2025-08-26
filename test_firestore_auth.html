@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔐 Тест Firestore и Auth</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 { color: #2d3748; margin-bottom: 30px; }
+        .status { padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .success { background: #c6f6d5; color: #2f855a; }
+        .error { background: #fed7d7; color: #c53030; }
+        .info { background: #bee3f8; color: #2b6cb0; }
+        .warning { background: #faf089; color: #975a16; }
+        button {
+            background: #4299e1;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #3182ce; }
+        button:disabled { background: #a0aec0; cursor: not-allowed; }
+        .log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .test-section {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4299e1;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Тест Firebase Auth и Firestore</h1>
+        
+        <div id="authStatus" class="info">
+            🔄 Инициализация Firebase...
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Тест записи в userProfiles</h3>
+            <p>Этот тест проверяет запись данных пользователя в коллекцию userProfiles (та же ошибка что в приложении).</p>
+            
+            <div class="form-group">
+                <label>Номер паспорта (Document ID):</label>
+                <input type="text" id="passportNumber" value="AD2444681" placeholder="Например: AD2444681">
+            </div>
+            
+            <div class="form-group">
+                <label>ФИО:</label>
+                <input type="text" id="fullName" value="OTABEK USKENBAYEV" placeholder="Полное имя">
+            </div>
+            
+            <div class="form-group">
+                <label>Телефон:</label>
+                <input type="text" id="phone" value="+998999357706" placeholder="+998999357706">
+            </div>
+            
+            <div class="form-group">
+                <label>Номер квартиры:</label>
+                <input type="text" id="apartmentNumber" value="203" placeholder="203">
+            </div>
+            
+            <div class="form-group">
+                <label>Блок:</label>
+                <input type="text" id="blockId" value="F" placeholder="F">
+            </div>
+            
+            <button onclick="testUserProfileWrite()">📝 Записать профиль пользователя</button>
+            <button onclick="testUserProfileRead()">👀 Прочитать профиль</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Дополнительные тесты</h3>
+            <button onclick="testAnonymousAuth()">🔓 Тест анонимной аутентификации</button>
+            <button onclick="testFirestoreRules()">📋 Тест правил Firestore</button>
+            <button onclick="testStorageRules()">📸 Тест правил Storage</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="log" id="logContainer">
+            Лог операций появится здесь...
+        </div>
+
+        <button onclick="clearLog()">🗑️ Очистить лог</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getStorage, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+
+        // Firebase конфигурация
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVy8OhKiDW8CPOJ2yUnx-ov5WkOYa8WMg",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "254421846823",
+            appId: "1:254421846823:web:8f1742dfd38b0b38bce866"
+        };
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const firestore = getFirestore(app);
+        const storage = getStorage(app);
+
+        let currentUser = null;
+
+        // Функции для лога
+        window.log = function(message, type = 'info') {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorMap = {
+                'info': '#4299e1',
+                'success': '#48bb78',
+                'error': '#f56565',
+                'warning': '#ed8936'
+            };
+            
+            logContainer.innerHTML += `<div style="color: ${colorMap[type]};">[${timestamp}] ${message}</div>`;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        };
+
+        window.clearLog = function() {
+            document.getElementById('logContainer').innerHTML = 'Лог очищен...';
+        };
+
+        function showResult(message, type) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        // Аутентификация
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            const authStatus = document.getElementById('authStatus');
+            
+            if (user) {
+                authStatus.className = 'status success';
+                authStatus.innerHTML = `✅ Аутентифицирован: ${user.uid} (${user.isAnonymous ? 'анонимно' : 'обычно'})`;
+                log(`Аутентифицирован как: ${user.uid}, анонимно: ${user.isAnonymous}`, 'success');
+            } else {
+                authStatus.className = 'status warning';
+                authStatus.innerHTML = '🔄 Выполняется аутентификация...';
+                
+                signInAnonymously(auth)
+                    .then(() => {
+                        log('Анонимная аутентификация успешна', 'success');
+                    })
+                    .catch((error) => {
+                        authStatus.className = 'status error';
+                        authStatus.innerHTML = `❌ Ошибка аутентификации: ${error.message}`;
+                        log(`Ошибка аутентификации: ${error.message}`, 'error');
+                    });
+            }
+        });
+
+        // Тест записи в userProfiles (основная проблема)
+        window.testUserProfileWrite = async function() {
+            if (!currentUser) {
+                log('Ошибка: пользователь не аутентифицирован', 'error');
+                return;
+            }
+
+            const passportNumber = document.getElementById('passportNumber').value;
+            const fullName = document.getElementById('fullName').value;
+            const phone = document.getElementById('phone').value;
+            const apartmentNumber = document.getElementById('apartmentNumber').value;
+            const blockId = document.getElementById('blockId').value;
+
+            if (!passportNumber) {
+                log('Ошибка: введите номер паспорта', 'error');
+                return;
+            }
+
+            log(`🔄 Начинаем запись в userProfiles/${passportNumber}`, 'info');
+            log(`Данные: ${fullName}, ${phone}, ${apartmentNumber}, ${blockId}`, 'info');
+
+            try {
+                // Создаем точно такие же данные как в приложении
+                const userData = {
+                    uid: currentUser.uid,
+                    fullName: fullName,
+                    phone: phone,
+                    role: 'resident',
+                    apartmentNumber: apartmentNumber,
+                    blockId: blockId,
+                    lastLogin: serverTimestamp(),
+                    createdAt: serverTimestamp(),
+                    isAnonymous: currentUser.isAnonymous,
+                    passportNumber: passportNumber,
+                    dataSource: 'web_test'
+                };
+
+                log('Данные для записи:', 'info');
+                log(JSON.stringify(userData, null, 2), 'info');
+
+                const userDoc = doc(firestore, 'userProfiles', passportNumber);
+                await setDoc(userDoc, userData, { merge: true });
+
+                log('✅ Запись в userProfiles успешна!', 'success');
+                showResult(`✅ Профиль ${passportNumber} записан успешно`, 'success');
+
+            } catch (error) {
+                log(`❌ Ошибка записи: ${error.message}`, 'error');
+                log(`Код ошибки: ${error.code}`, 'error');
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        };
+
+        // Тест чтения из userProfiles
+        window.testUserProfileRead = async function() {
+            const passportNumber = document.getElementById('passportNumber').value;
+            
+            if (!passportNumber) {
+                log('Ошибка: введите номер паспорта', 'error');
+                return;
+            }
+
+            log(`🔄 Читаем userProfiles/${passportNumber}`, 'info');
+
+            try {
+                const userDoc = doc(firestore, 'userProfiles', passportNumber);
+                const docSnap = await getDoc(userDoc);
+
+                if (docSnap.exists()) {
+                    log('✅ Документ найден:', 'success');
+                    log(JSON.stringify(docSnap.data(), null, 2), 'success');
+                    showResult(`✅ Профиль ${passportNumber} найден`, 'success');
+                } else {
+                    log('⚠️ Документ не найден', 'warning');
+                    showResult(`⚠️ Профиль ${passportNumber} не найден`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Ошибка чтения: ${error.message}`, 'error');
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        };
+
+        // Тест анонимной аутентификации
+        window.testAnonymousAuth = async function() {
+            log('🔄 Тестируем анонимную аутентификацию', 'info');
+
+            try {
+                if (currentUser) {
+                    log(`Текущий пользователь: ${currentUser.uid}`, 'info');
+                    log(`Анонимный: ${currentUser.isAnonymous}`, 'info');
+                    log(`Email: ${currentUser.email || 'нет'}`, 'info');
+                    log(`Phone: ${currentUser.phoneNumber || 'нет'}`, 'info');
+                    
+                    // Получаем токен
+                    const token = await currentUser.getIdToken();
+                    log(`ID токен получен (длина: ${token.length})`, 'success');
+                    
+                    showResult('✅ Анонимная аутентификация работает', 'success');
+                } else {
+                    log('❌ Пользователь не аутентифицирован', 'error');
+                    showResult('❌ Анонимная аутентификация не работает', 'error');
+                }
+            } catch (error) {
+                log(`❌ Ошибка: ${error.message}`, 'error');
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        };
+
+        // Тест правил Firestore
+        window.testFirestoreRules = async function() {
+            log('🔄 Тестируем правила Firestore', 'info');
+
+            const tests = [
+                { collection: 'userProfiles', doc: 'test123' },
+                { collection: 'fcm_tokens', doc: '998999357706' },
+                { collection: 'serviceRequests', doc: 'test456' },
+                { collection: 'news', doc: 'test789' }
+            ];
+
+            for (const test of tests) {
+                try {
+                    log(`Тестируем ${test.collection}/${test.doc}...`, 'info');
+                    
+                    // Попытка записи
+                    const testDoc = doc(firestore, test.collection, test.doc);
+                    await setDoc(testDoc, {
+                        test: true,
+                        timestamp: serverTimestamp(),
+                        from: 'rules_test'
+                    }, { merge: true });
+                    
+                    log(`✅ ${test.collection}: запись разрешена`, 'success');
+                    
+                    // Попытка чтения
+                    const docSnap = await getDoc(testDoc);
+                    if (docSnap.exists()) {
+                        log(`✅ ${test.collection}: чтение разрешено`, 'success');
+                    }
+                    
+                } catch (error) {
+                    log(`❌ ${test.collection}: ${error.message}`, 'error');
+                }
+            }
+            
+            showResult('Тест правил Firestore завершен', 'info');
+        };
+
+        // Тест правил Storage
+        window.testStorageRules = async function() {
+            log('🔄 Тестируем правила Storage', 'info');
+
+            try {
+                // Создаем тестовый файл
+                const testData = new Blob(['test data'], { type: 'text/plain' });
+                const testPath = `service_requests/test_${Date.now()}/images/test.txt`;
+                
+                const storageRef = ref(storage, testPath);
+                await uploadBytes(storageRef, testData);
+                
+                log('✅ Загрузка в Storage успешна', 'success');
+                showResult('✅ Правила Storage работают', 'success');
+                
+            } catch (error) {
+                log(`❌ Ошибка Storage: ${error.message}`, 'error');
+                showResult(`❌ Ошибка Storage: ${error.message}`, 'error');
+            }
+        };
+    </script>
+</body>
+</html> 

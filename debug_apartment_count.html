@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Apartment Count</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .warning { background-color: #fff3cd; }
+        button { padding: 10px 20px; margin: 5px; }
+        .apartment { margin: 5px 0; padding: 5px; background-color: #f8f9fa; border-left: 3px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Debug Apartment Count</h1>
+    <button onclick="checkApartmentCount()">Проверить количество квартир</button>
+    <button onclick="clearResults()">Очистить результаты</button>
+    <div id="results"></div>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxGQoM3V-m6DtY9d_86Xsh8h5f0YZFU8Y",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.appspot.com",
+            messagingSenderId: "1098765432109",
+            appId: "1:1098765432109:web:abcdef1234567890"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function addApartment(apartment) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'apartment';
+            div.innerHTML = `
+                <strong>${apartment.blockId} ${apartment.apartmentNumber}</strong><br>
+                ID: ${apartment.id}<br>
+                Source: ${apartment.source}<br>
+                Path: ${apartment.path}
+            `;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function checkApartmentCount() {
+            clearResults();
+            addResult('🔍 Проверяем количество квартир для паспорта: AD2444681', 'info');
+            
+            const passportNumber = 'AD2444681';
+            const allApartments = [];
+            const seenApartments = new Set();
+
+            // Strategy 1: CollectionGroup search
+            addResult('📋 Strategy 1: CollectionGroup search', 'info');
+            try {
+                const querySnapshot = await db.collectionGroup('apartments')
+                    .where('passport_number', '==', passportNumber)
+                    .get();
+
+                addResult(`   Найдено ${querySnapshot.docs.length} квартир через collectionGroup`, 'info');
+
+                for (let doc of querySnapshot.docs) {
+                    const data = doc.data();
+                    const blockId = doc.ref.parent.parent?.id || 'Unknown';
+                    const apartmentKey = `${blockId}_${data.apartment_number}`;
+                    
+                    if (!seenApartments.has(apartmentKey)) {
+                        seenApartments.add(apartmentKey);
+                        const apartment = {
+                            blockId: blockId,
+                            apartmentNumber: data.apartment_number,
+                            id: doc.id,
+                            path: doc.ref.path,
+                            source: 'CollectionGroup'
+                        };
+                        allApartments.push(apartment);
+                        addApartment(apartment);
+                    } else {
+                        addResult(`     ⚠️ Пропущен дубликат: ${blockId} ${data.apartment_number}`, 'warning');
+                    }
+                }
+            } catch (e) {
+                addResult(`   ❌ CollectionGroup search failed: ${e.message}`, 'error');
+            }
+
+            // Strategy 2: Users collection search
+            addResult('📋 Strategy 2: Users collection search', 'info');
+            try {
+                const usersSnapshot = await db.collection('users')
+                    .where('passport_number', '==', passportNumber)
+                    .get();
+
+                addResult(`   Найдено ${usersSnapshot.docs.length} квартир в коллекции users`, 'info');
+
+                for (let doc of usersSnapshot.docs) {
+                    const data = doc.data();
+                    const blockNumber = data.block_number || 'Unknown';
+                    const apartmentKey = `${blockNumber}_${data.apartment_number}`;
+                    
+                    if (!seenApartments.has(apartmentKey)) {
+                        seenApartments.add(apartmentKey);
+                        const apartment = {
+                            blockId: blockNumber,
+                            apartmentNumber: data.apartment_number,
+                            id: doc.id,
+                            path: doc.ref.path,
+                            source: 'Users'
+                        };
+                        allApartments.push(apartment);
+                        addApartment(apartment);
+                    } else {
+                        addResult(`     ⚠️ Пропущен дубликат: ${blockNumber} ${data.apartment_number}`, 'warning');
+                    }
+                }
+            } catch (e) {
+                addResult(`   ❌ Users collection search failed: ${e.message}`, 'error');
+            }
+
+            // Strategy 3: Known blocks search
+            addResult('📋 Strategy 3: Known blocks search', 'info');
+            const knownBlocks = ['D BLOK', 'E BLOK', 'F BLOK', 'G BLOK', 'H BLOK', 'I BLOK', 'J BLOK'];
+            
+            for (let blockId of knownBlocks) {
+                try {
+                    const blockApartmentsSnapshot = await db.collection('users')
+                        .doc(blockId)
+                        .collection('apartments')
+                        .where('passport_number', '==', passportNumber)
+                        .get();
+
+                    if (blockApartmentsSnapshot.docs.length > 0) {
+                        addResult(`   Блок ${blockId}: найдено ${blockApartmentsSnapshot.docs.length} квартир`, 'info');
+
+                        for (let doc of blockApartmentsSnapshot.docs) {
+                            const data = doc.data();
+                            const apartmentKey = `${blockId}_${data.apartment_number}`;
+                            
+                            if (!seenApartments.has(apartmentKey)) {
+                                seenApartments.add(apartmentKey);
+                                const apartment = {
+                                    blockId: blockId,
+                                    apartmentNumber: data.apartment_number,
+                                    id: doc.id,
+                                    path: doc.ref.path,
+                                    source: 'KnownBlocks'
+                                };
+                                allApartments.push(apartment);
+                                addApartment(apartment);
+                            } else {
+                                addResult(`     ⚠️ Пропущен дубликат: ${blockId} ${data.apartment_number}`, 'warning');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    addResult(`   Блок ${blockId}: не существует или поиск не удался: ${e.message}`, 'info');
+                }
+            }
+
+            // Final results
+            addResult('🎯 === РЕЗУЛЬТАТЫ ПОИСКА ===', 'info');
+            addResult(`   Всего уникальных квартир найдено: ${allApartments.length}`, 'success');
+            
+            if (allApartments.length === 0) {
+                addResult('   ❌ Квартиры не найдены!', 'error');
+            } else if (allApartments.length === 1) {
+                addResult('   ⚠️ Найдена только 1 квартира', 'warning');
+            } else {
+                addResult(`   ✅ Найдено ${allApartments.length} квартир - это правильно!`, 'success');
+            }
+        }
+    </script>
+</body>
+</html> 

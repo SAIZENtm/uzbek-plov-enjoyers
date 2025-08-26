@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📱 Простое мобильное тестирование</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step h3 {
+            color: #667eea;
+            margin: 0 0 15px 0;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            margin: 15px 0;
+            transition: transform 0.3s;
+            box-sizing: border-box;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .ip-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            box-sizing: border-box;
+        }
+        .ip-input:focus {
+            outline: none;
+            border-color: #764ba2;
+        }
+        .qr-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .qr-code {
+            margin: 20px 0;
+        }
+        .qr-code img {
+            max-width: 200px;
+            border-radius: 10px;
+        }
+        .device-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .current-url {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Простое тестирование</h1>
+        
+        <div class="status info">
+            <strong>Веб-сервер должен быть запущен!</strong><br>
+            Команда: <code>python -m http.server 8000</code>
+        </div>
+        
+        <div class="step">
+            <h3>🌐 Шаг 1: Определите ваш IP адрес</h3>
+            <p>Выполните команду в терминале:</p>
+            <div class="code-block">
+                # Windows:<br>
+                ipconfig<br><br>
+                # Mac/Linux:<br>
+                ifconfig | grep inet
+            </div>
+            <p>Найдите IP адрес вашего WiFi адаптера (обычно 192.168.x.x)</p>
+        </div>
+        
+        <div class="step">
+            <h3>📍 Шаг 2: Введите ваш IP адрес</h3>
+            <input type="text" class="ip-input" id="ipInput" placeholder="192.168.1.100" value="">
+            <button class="btn" onclick="generateLinks()">🔗 Создать ссылки</button>
+        </div>
+        
+        <div id="linksSection" style="display: none;">
+            <div class="current-url">
+                <h3>📱 Откройте на телефоне:</h3>
+                <div class="code-block" id="mobileUrl"></div>
+                <a href="#" class="btn" id="openMobile" target="_blank">
+                    📱 Открыть главную страницу
+                </a>
+            </div>
+            
+            <div class="qr-section">
+                <h3>📷 QR код для быстрого доступа</h3>
+                <div class="qr-code" id="qrCode"></div>
+            </div>
+            
+            <div class="step">
+                <h3>🧪 Прямые ссылки для тестирования</h3>
+                <a href="#" class="btn" id="testUniversal">
+                    🔗 Тест универсальной ссылки
+                </a>
+                <a href="#" class="btn btn-secondary" id="testWeb">
+                    🌐 Тест веб-версии
+                </a>
+                <a href="#" class="btn btn-secondary" id="testCreate">
+                    🧪 Создать инвайт
+                </a>
+            </div>
+        </div>
+        
+        <div class="step">
+            <h3>🎯 Что ожидать при тестировании</h3>
+            <p><strong>Сценарий 1: Приложение НЕ установлено</strong></p>
+            <ul>
+                <li>Спиннер "Открываем приложение..."</li>
+                <li>Через 3 секунды: "Приложение не найдено"</li>
+                <li>Автоматический переход на веб-версию</li>
+                <li>Форма регистрации с данными приглашения</li>
+            </ul>
+            
+            <p><strong>Сценарий 2: Приложение установлено</strong></p>
+            <ul>
+                <li>Приложение открывается напрямую</li>
+                <li>Экран принятия инвайта</li>
+                <li>Предзаполненные данные</li>
+            </ul>
+        </div>
+        
+        <div class="device-info" id="deviceInfo">
+            Загружаем информацию об устройстве...
+        </div>
+    </div>
+
+    <script>
+        // Определение информации об устройстве
+        function getDeviceInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenSize: `${screen.width}x${screen.height}`,
+                windowSize: `${window.innerWidth}x${window.innerHeight}`,
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+                isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+                isAndroid: /Android/.test(navigator.userAgent)
+            };
+            
+            return info;
+        }
+
+        // Генерация ссылок
+        function generateLinks() {
+            const ip = document.getElementById('ipInput').value.trim();
+            
+            if (!ip) {
+                alert('Пожалуйста, введите IP адрес');
+                return;
+            }
+            
+            // Простая валидация IP
+            const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+            if (!ipPattern.test(ip)) {
+                alert('Введите корректный IP адрес (например: 192.168.1.100)');
+                return;
+            }
+            
+            const serverUrl = `http://${ip}:8000`;
+            const universalUrl = `${serverUrl}/universal_link_handler.html?invite=THZ5RZ9FD3D9DR01`;
+            const webUrl = `${serverUrl}/invite_web.html?invite=THZ5RZ9FD3D9DR01`;
+            const createUrl = `${serverUrl}/test_invite_system.html`;
+            
+            // Обновление ссылок
+            document.getElementById('mobileUrl').textContent = serverUrl;
+            document.getElementById('openMobile').href = serverUrl;
+            document.getElementById('testUniversal').href = universalUrl;
+            document.getElementById('testWeb').href = webUrl;
+            document.getElementById('testCreate').href = createUrl;
+            
+            // Генерация QR кода
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(universalUrl)}`;
+            document.getElementById('qrCode').innerHTML = `
+                <img src="${qrUrl}" alt="QR Code">
+                <p><small>Отсканируйте для тестирования универсальной ссылки</small></p>
+            `;
+            
+            // Показать секцию ссылок
+            document.getElementById('linksSection').style.display = 'block';
+            
+            // Сохранить IP в localStorage
+            localStorage.setItem('testIP', ip);
+        }
+
+        // Обновление информации об устройстве
+        function updateDeviceInfo() {
+            const deviceInfo = getDeviceInfo();
+            const deviceInfoEl = document.getElementById('deviceInfo');
+            
+            deviceInfoEl.innerHTML = `
+                <strong>Информация об устройстве:</strong><br>
+                Платформа: ${deviceInfo.platform}<br>
+                Мобильное: ${deviceInfo.isMobile ? 'Да' : 'Нет'}<br>
+                iOS: ${deviceInfo.isIOS ? 'Да' : 'Нет'}<br>
+                Android: ${deviceInfo.isAndroid ? 'Да' : 'Нет'}<br>
+                Размер экрана: ${deviceInfo.screenSize}<br>
+                Размер окна: ${deviceInfo.windowSize}<br>
+                Язык: ${deviceInfo.language}
+            `;
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDeviceInfo();
+            
+            // Восстановить сохраненный IP
+            const savedIP = localStorage.getItem('testIP');
+            if (savedIP) {
+                document.getElementById('ipInput').value = savedIP;
+            }
+            
+            // Автоматически генерировать ссылки если IP уже введен
+            if (savedIP) {
+                generateLinks();
+            }
+        });
+
+        // Обработка Enter в поле ввода
+        document.getElementById('ipInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateLinks();
+            }
+        });
+    </script>
+</body>
+</html> 

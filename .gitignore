@@ -1,0 +1,138 @@
+# Flutter/Dart specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Firebase
+firebase-debug.log
+.firebase/
+.firebaserc
+
+# Android related
+android/.gradle
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+android/key.properties
+*.jks
+
+# iOS related
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.moved-aside
+ios/**/*.pbxuser
+ios/**/*.perspectivev3
+ios/**/*sync/
+ios/**/.sconsign.dblite
+ios/**/.tags*
+ios/**/.vagrant/
+ios/**/DerivedData/
+ios/**/Icon?
+ios/**/Pods/
+ios/**/.symlinks/
+ios/**/profile
+ios/**/xcuserdata
+ios/.generated/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Web related
+web/
+
+# Coverage
+coverage/
+
+# Symbols
+app.*.symbols
+
+# Exceptions to above rules
+!**/ios/**/default.mode1v3
+!**/ios/**/default.mode2v3
+!**/ios/**/default.pbxuser
+!**/ios/**/default.perspectivev3
+
+# Sensitive files
+*.env
+*.env.local
+*.env.production
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+
+# Local development files
+*.log
+*.tmp
+*.temp
+
+# IDE specific
+.history/
+.vscode/settings.json
+
+# Test related
+test_driver/
+integration_test/driver/
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+
+# Debug files
+debug/
+logs/
+
+# Local plugins
+local_plugins/
+
+# Temporary files created during development
+*.bak
+*.swp
+*.swo
+*~
+
+# PGLite debug logs
+pglite-debug.log
+
+# Firebase emulator data
+.firebase/
+firebase-debug.log
+ui-debug.log
+firestore-debug.log
+database-debug.log
+pubsub-debug.log

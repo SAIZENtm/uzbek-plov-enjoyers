@@ -1,0 +1,214 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // === ФУНКЦИИ-ПОМОЩНИКИ ===
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Проверка что пользователь может редактировать свой профиль
+    function canEditProfile(profileId) {
+      return isAuthenticated() && (
+        request.auth.uid == profileId ||
+        resource.data.get('uid', '') == request.auth.uid ||
+        resource.data.get('passportNumber', '') == profileId
+      );
+    }
+
+    // === ОСНОВНЫЕ КОЛЛЕКЦИИ ===
+
+    // АДМИНИСТРАТОРЫ
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow write: if false; // Только через консоль Firebase
+    }
+    
+    // НОВОСТИ - публичное чтение опубликованных новостей
+    match /news/{newsId} {
+      allow read: if resource.data.get('status', '') == 'published';
+      allow write: if isAdmin();
+    }
+    
+    // ПОЛЬЗОВАТЕЛЬСКИЕ НАСТРОЙКИ (НЕ профили!)
+    // Для настроек уведомлений, прочитанных новостей и т.д.
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // ПРОФИЛИ ПОЛЬЗОВАТЕЛЕЙ - основная проблемная коллекция
+    match /userProfiles/{profileId} {
+      // Чтение: любой аутентифицированный пользователь
+      allow read: if isAuthenticated();
+      
+      // Создание: любой аутентифицированный пользователь (для первичной регистрации)
+      allow create: if isAuthenticated() && (
+        request.resource.data.uid == request.auth.uid ||
+        request.auth.uid != null
+      );
+      
+      // Обновление: владелец профиля или тот же UID/паспорт
+      allow update: if canEditProfile(profileId);
+      
+      // Удаление: только админы
+      allow delete: if isAdmin();
+    }
+    
+    // FCM ТОКЕНЫ - для push-уведомлений
+    match /fcm_tokens/{phoneNumber} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // === СТРУКТУРА КВАРТИР ===
+    
+    // Блоки - публичное чтение для аутентификации
+    match /blocks/{blockId} {
+      allow read: if true;
+      allow write: if isAdmin();
+      
+      // Квартиры в блоках
+      match /apartments/{apartmentId} {
+        allow read: if true; // Нужно для поиска при аутентификации
+        allow write: if isAdmin();
+      }
+    }
+    
+            // Альтернативная структура: users/{blockId}/apartments/{apartmentNumber}
+        match /users/{blockId} {
+          allow read: if true; 
+          allow write: if isAdmin();
+          
+          match /apartments/{apartmentNumber} {
+            allow read: if isAuthenticated();
+            allow write: if isAuthenticated(); // Для обновления FCM токенов и умного дома
+            
+            // Умный дом - пользователь может управлять только своей квартирой
+            function canAccessSmartHome() {
+              return isAuthenticated() && (
+                // Проверяем что пользователь имеет доступ к этой квартире
+                exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) ||
+                resource != null
+              );
+            }
+            
+            // Правила для обновления smartHome данных
+            allow update: if canAccessSmartHome() && 
+              request.resource.data.keys().hasOnly(['name', 'phone', 'fcmToken', 'smartHome', 'lastActivity']) &&
+              (request.resource.data.smartHome == null || 
+               request.resource.data.smartHome is map);
+          }
+        }
+    
+    // Collection group queries для поиска квартир
+    match /{path=**}/apartments/{apartmentId} {
+      allow read: if true; // Для поиска при аутентификации
+      allow write: if isAdmin();
+    }
+
+    // === ОСНОВНЫЕ ФУНКЦИИ ПРИЛОЖЕНИЯ ===
+    
+    // СЕРВИСНЫЕ ЗАЯВКИ
+    match /serviceRequests/{requestId} {
+      // Чтение: любой аутентифицированный пользователь
+      allow read: if isAuthenticated();
+      
+      // Создание: любой аутентифицированный пользователь
+      allow create: if isAuthenticated();
+      
+      // Обновление: автор заявки или админ
+      allow update: if isAuthenticated() && (
+        resource.data.get('userId', '') == request.auth.uid ||
+        isAdmin()
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    // РЕЗИДЕНТЫ/КЛИЕНТЫ - профили пользователей (альтернативные коллекции)
+    match /residents/{residentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        request.auth.uid == residentId ||
+        resource.data.get('uid', '') == request.auth.uid
+      );
+    }
+    
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        request.auth.uid == clientId ||
+        resource.data.get('uid', '') == request.auth.uid
+      );
+    }
+    
+    // УВЕДОМЛЕНИЯ
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.get('userId', '') == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // === СЕМЕЙНЫЕ ФУНКЦИИ ===
+    
+    // СЕМЕЙНЫЕ ЗАПРОСЫ
+    match /familyRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
+    // ПРИГЛАШЕНИЯ
+    match /invitations/{inviteId} {
+      allow read: if true; // Нужно для валидации приглашений по ссылке
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    match /familyInvites/{inviteId} {
+      allow read: if true; // Публичное чтение для веб-ссылок
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // ОБНОВЛЕННЫЕ ПРАВИЛА ДЛЯ КВАРТИР С СЕМЬЯМИ
+    match /apartments/{apartmentId} {
+      allow read: if isAuthenticated();
+      allow update: if isAuthenticated(); // Для семейных запросов
+      allow create, delete: if isAdmin();
+    }
+
+    // === ДОПОЛНИТЕЛЬНЫЕ КОЛЛЕКЦИИ ===
+    
+    // УТИЛИТЫ И ПОКАЗАНИЯ СЧЕТЧИКОВ
+    match /utilityReadings/{readingId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // ОТЗЫВЫ
+    match /feedback/{feedbackId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // ОПЛАТЫ И БРОНИРОВАНИЯ - только админы
+    match /payments/{paymentId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /bookings/{bookingId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // === БЕЗОПАСНОСТЬ ПО УМОЛЧАНИЮ ===
+    
+    // Все остальные коллекции - запрещен доступ
+    // (можно добавить конкретные правила по мере необходимости)
+  }
+} 

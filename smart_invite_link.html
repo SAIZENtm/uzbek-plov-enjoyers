@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newport - Умные ссылки приглашений</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .section h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .link-example {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: transform 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        .flow-diagram {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .flow-step {
+            display: inline-block;
+            background: #fff;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 200px;
+            vertical-align: top;
+        }
+        .flow-arrow {
+            font-size: 24px;
+            color: #667eea;
+            margin: 0 10px;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .highlight {
+            background: #ffd700;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #333;
+        }
+        .store-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .store-link {
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+        .store-link:hover {
+            transform: scale(1.05);
+        }
+        .google-play {
+            background: #01875f;
+        }
+        .app-store {
+            background: #000;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:before {
+            content: "✅";
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Newport - Умные ссылки приглашений</h1>
+        
+        <div class="section">
+            <h3>🎯 Как это работает</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <strong>1. Пользователь кликает</strong><br>
+                    по ссылке приглашения
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">
+                    <strong>2. Проверка приложения</strong><br>
+                    Есть ли Newport на устройстве?
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">
+                    <strong>3A. Приложение есть</strong><br>
+                    Открывается сразу с данными
+                </div>
+            </div>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <strong>3B. Приложения нет</strong><br>
+                    Веб-страница с формой
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">
+                    <strong>4. Скачивание</strong><br>
+                    Перенаправление в магазин
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">
+                    <strong>5. Регистрация</strong><br>
+                    Данные уже заполнены
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🔧 Типы ссылок</h3>
+            
+            <h4>1. Deep Link (для приложения)</h4>
+            <div class="link-example">
+                newport://invite/THZ5RZ9FD3D9DR01
+            </div>
+            <p>Открывает приложение напрямую, если оно установлено</p>
+            
+            <h4>2. Web Link (fallback)</h4>
+            <div class="link-example">
+                https://newport-invite.web.app/invite_web.html?invite=THZ5RZ9FD3D9DR01
+            </div>
+            <p>Веб-страница с формой регистрации и ссылками на магазины</p>
+            
+            <h4>3. Universal Link (рекомендуется)</h4>
+            <div class="link-example">
+                https://newport-app.com/invite/THZ5RZ9FD3D9DR01
+            </div>
+            <p>Автоматически определяет, что делать - открыть приложение или веб-страницу</p>
+        </div>
+
+        <div class="section">
+            <h3>📱 Реализация в приложении</h3>
+            
+            <h4>Генерация ссылок в InvitationModel:</h4>
+            <div class="code-block">
+/// Генерирует deep link для приложения
+String generateDeepLink() {
+  return 'newport://invite/$id';
+}
+
+/// Генерирует веб-ссылку с fallback
+String generateWebLink() {
+  return 'https://newport-invite.web.app/invite_web.html?invite=$id';
+}
+
+/// Генерирует универсальную ссылку для шаринга
+String generateShareableLink() {
+  return generateWebLink();
+}
+
+/// Генерирует текст для шаринга
+String generateShareText() {
+  return '''
+🏠 Приглашение в Newport
+
+Вас приглашает: $ownerName
+Адрес: $blockId, квартира $apartmentNumber
+
+Ссылка: ${generateShareableLink()}
+
+Если у вас нет приложения, оно автоматически предложит его скачать.
+  '''.trim();
+}
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🌐 Веб-интерфейс</h3>
+            <ul class="feature-list">
+                <li>Автоматическое определение платформы (iOS/Android)</li>
+                <li>Попытка запуска приложения через deep link</li>
+                <li>Fallback на веб-форму если приложение не установлено</li>
+                <li>Перенаправление в соответствующий магазин приложений</li>
+                <li>Предзаполненная форма регистрации с данными из приглашения</li>
+                <li>Сохранение данных в Firebase для последующего использования</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>🔗 Тестирование системы</h3>
+            <p>Протестируйте различные сценарии:</p>
+            
+            <div class="store-links">
+                <a href="test_invite_system.html" class="btn">
+                    🧪 Создать тестовый инвайт
+                </a>
+                <a href="invite_web.html?invite=THZ5RZ9FD3D9DR01" class="btn btn-secondary">
+                    📱 Тест веб-интерфейса
+                </a>
+                <a href="test_deep_link.html" class="btn btn-secondary">
+                    🔗 Тест deep links
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🚀 Публикация в магазинах</h3>
+            <p>Для полноценной работы нужно опубликовать приложение:</p>
+            
+            <div class="store-links">
+                <a href="https://play.google.com/console" class="store-link google-play" target="_blank">
+                    📱 Google Play Console
+                </a>
+                <a href="https://appstoreconnect.apple.com" class="store-link app-store" target="_blank">
+                    🍎 App Store Connect
+                </a>
+            </div>
+            
+            <p><strong>После публикации:</strong></p>
+            <ul>
+                <li>Обновите ссылки в веб-интерфейсе на реальные ID приложений</li>
+                <li>Настройте Universal Links для iOS</li>
+                <li>Настройте App Links для Android</li>
+                <li>Добавьте домен для веб-версии</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>⚙️ Настройка Universal Links</h3>
+            
+            <h4>iOS (Info.plist):</h4>
+            <div class="code-block">
+&lt;key&gt;CFBundleURLTypes&lt;/key&gt;
+&lt;array&gt;
+    &lt;dict&gt;
+        &lt;key&gt;CFBundleURLName&lt;/key&gt;
+        &lt;string&gt;com.newport.resident.deeplink&lt;/string&gt;
+        &lt;key&gt;CFBundleURLSchemes&lt;/key&gt;
+        &lt;array&gt;
+            &lt;string&gt;newport&lt;/string&gt;
+        &lt;/array&gt;
+    &lt;/dict&gt;
+&lt;/array&gt;
+
+&lt;key&gt;com.apple.developer.associated-domains&lt;/key&gt;
+&lt;array&gt;
+    &lt;string&gt;applinks:newport-app.com&lt;/string&gt;
+&lt;/array&gt;
+            </div>
+            
+            <h4>Android (AndroidManifest.xml):</h4>
+            <div class="code-block">
+&lt;intent-filter android:autoVerify="true"&gt;
+    &lt;action android:name="android.intent.action.VIEW" /&gt;
+    &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+    &lt;category android:name="android.intent.category.BROWSABLE" /&gt;
+    &lt;data android:scheme="newport" /&gt;
+&lt;/intent-filter&gt;
+
+&lt;intent-filter android:autoVerify="true"&gt;
+    &lt;action android:name="android.intent.action.VIEW" /&gt;
+    &lt;category android:name="android.intent.category.DEFAULT" /&gt;
+    &lt;category android:name="android.intent.category.BROWSABLE" /&gt;
+    &lt;data android:scheme="https"
+          android:host="newport-app.com" /&gt;
+&lt;/intent-filter&gt;
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📊 Текущий статус</h3>
+            <ul class="feature-list">
+                <li>Deep links настроены для Android и iOS</li>
+                <li>Веб-интерфейс с формой регистрации готов</li>
+                <li>Firebase интеграция работает</li>
+                <li>Система генерации ссылок реализована</li>
+                <li>Тестовые инструменты созданы</li>
+            </ul>
+            
+            <p><strong>Следующие шаги:</strong></p>
+            <ul>
+                <li>Опубликовать приложение в магазинах</li>
+                <li>Настроить домен для веб-версии</li>
+                <li>Добавить Universal Links</li>
+                <li>Протестировать на реальных устройствах</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

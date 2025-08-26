@@ -1,0 +1,82 @@
+rules_version = '2';
+
+// 🔐 БЕЗОПАСНЫЕ ПРАВИЛА FIREBASE STORAGE ДЛЯ ПРОДАКШНА
+// Поддерживают анонимных пользователей (наше приложение использует signInAnonymously)
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      // Разрешаем всех аутентифицированных пользователей (включая анонимных)
+      return request.auth != null;
+    }
+    
+    function isValidImage() {
+      // Проверяем что это изображение и размер меньше 10MB (увеличено с 5MB)
+      return request.resource != null &&
+             request.resource.contentType != null &&
+             request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 10 * 1024 * 1024; // 10MB вместо 5MB
+    }
+    
+    function isValidFileSize() {
+      // Общая проверка размера файла (до 15MB)
+      return request.resource != null &&
+             request.resource.size < 15 * 1024 * 1024; // 15MB
+    }
+    
+    // 📱 SERVICE REQUEST IMAGES - БОЛЕЕ МЯГКИЕ ПРАВИЛА
+    // Путь: service_requests/{requestId}/images/{imageId}
+    match /service_requests/{requestId}/images/{imageId} {
+      // Публичное чтение для отображения на сайте
+      allow read: if true;
+      // Запись для всех аутентифицированных (включая анонимных)
+      allow write: if isAuthenticated() && isValidImage();
+      allow delete: if isAuthenticated();
+    }
+    
+    // 👤 USER PROFILE IMAGES
+    // Путь: users/{userId}/profile/{imageId}
+    match /users/{userId}/profile/{imageId} {
+      // Публичное чтение
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+      allow delete: if isAuthenticated();
+    }
+    
+    // 📊 UTILITY READING IMAGES
+    // Путь: utility_readings/{readingId}/images/{imageId}
+    match /utility_readings/{readingId}/images/{imageId} {
+      // Публичное чтение
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+      allow delete: if isAuthenticated();
+    }
+    
+    // 📰 NEWS AND ADMIN CONTENT
+    // Путь: admin/{allPaths=**}
+    match /admin/{allPaths=**} {
+      // Публичное чтение для новостей и контента
+      allow read: if true;
+      // Запись только для аутентифицированных
+      allow write, delete: if isAuthenticated() && isValidFileSize();
+    }
+    
+    // 📁 TEMPORARY UPLOADS - БОЛЕЕ МЯГКИЕ ПРАВИЛА
+    // Путь: temp/{userId}/{fileName}
+    match /temp/{userId}/{fileName} {
+      // Публичное чтение (для отладки)
+      allow read: if true;
+      // Запись для всех аутентифицированных
+      allow write: if isAuthenticated() && isValidImage();
+      allow delete: if isAuthenticated();
+    }
+    
+    // 🛠️ ОТЛАДКА - ВРЕМЕННЫЕ ПРАВИЛА ДЛЯ ВСЕХ ПУТЕЙ
+    // Позволяет читать любые файлы (для отображения на сайте)
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+} 

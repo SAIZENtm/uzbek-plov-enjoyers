@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест отправки уведомлений</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #005a8b;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        .info {
+            background: #e2f3ff;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        .test-buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .test-buttons button {
+            flex: 1;
+            min-width: 200px;
+        }
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+        .config-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .config-input {
+            margin-bottom: 10px;
+        }
+        .config-input input {
+            margin-bottom: 5px;
+        }
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .status.connected {
+            color: #28a745;
+        }
+        .status.disconnected {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Тест отправки уведомлений</h1>
+        
+        <div class="status" id="connectionStatus">
+            ⚠️ Не подключено к Firebase
+        </div>
+        
+        <!-- Конфигурация Firebase -->
+        <div class="config-section">
+            <h3>⚙️ Конфигурация Firebase</h3>
+            <div class="config-input">
+                <input type="text" id="apiKey" placeholder="API Key" value="AIzaSyDxVpK8_your_api_key">
+            </div>
+            <div class="config-input">
+                <input type="text" id="projectId" placeholder="Project ID" value="newport-23a19">
+            </div>
+            <button onclick="connectFirebase()">Подключиться к Firebase</button>
+        </div>
+        
+        <!-- Форма отправки уведомлений -->
+        <form id="notificationForm">
+            <div class="form-group">
+                <label for="userId">👤 ID пользователя (номер паспорта):</label>
+                <input type="text" id="userId" required placeholder="AC3077863" value="AC3077863">
+            </div>
+            
+            <div class="form-group">
+                <label for="title">📝 Заголовок уведомления:</label>
+                <input type="text" id="title" required placeholder="Заголовок уведомления" value="Тестовое уведомление">
+            </div>
+            
+            <div class="form-group">
+                <label for="message">💬 Текст уведомления:</label>
+                <textarea id="message" required placeholder="Введите текст уведомления">Это тестовое уведомление для проверки работы системы.</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="type">🏷️ Тип уведомления:</label>
+                <select id="type">
+                    <option value="system">📢 Системное</option>
+                    <option value="admin_response">👨‍💼 Ответ администратора</option>
+                    <option value="service_update">🔧 Обновление услуги</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="adminName">👤 Имя администратора:</label>
+                <input type="text" id="adminName" placeholder="Имя администратора" value="Тест Админ">
+            </div>
+            
+            <div class="form-group">
+                <label for="relatedRequestId">🔗 ID связанной заявки (опционально):</label>
+                <input type="text" id="relatedRequestId" placeholder="Если связано с заявкой">
+            </div>
+            
+            <button type="submit" id="sendButton">📤 Отправить уведомление</button>
+        </form>
+        
+        <!-- Быстрые тесты -->
+        <div class="test-buttons">
+            <button onclick="sendTestSystem()">📢 Тест: Системное</button>
+            <button onclick="sendTestAdmin()">👨‍💼 Тест: Ответ админа</button>
+            <button onclick="sendTestService()">🔧 Тест: Обновление</button>
+            <button onclick="getUsersList()">👥 Список пользователей</button>
+        </div>
+        
+        <!-- Результат -->
+        <div id="result"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+    <script>
+        let db = null;
+        let isConnected = false;
+        
+        // Подключение к Firebase
+        function connectFirebase() {
+            const apiKey = document.getElementById('apiKey').value;
+            const projectId = document.getElementById('projectId').value;
+            
+            if (!apiKey || !projectId) {
+                showResult('❌ Введите API Key и Project ID', 'error');
+                return;
+            }
+            
+            try {
+                const firebaseConfig = {
+                    apiKey: apiKey,
+                    authDomain: `${projectId}.firebaseapp.com`,
+                    projectId: projectId,
+                    storageBucket: `${projectId}.appspot.com`,
+                };
+                
+                // Инициализация Firebase
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                
+                // Проверка подключения
+                db.collection('notifications').limit(1).get()
+                    .then(() => {
+                        isConnected = true;
+                        updateConnectionStatus();
+                        showResult('✅ Успешно подключено к Firebase!', 'success');
+                    })
+                    .catch(error => {
+                        showResult(`❌ Ошибка подключения: ${error.message}`, 'error');
+                    });
+                    
+            } catch (error) {
+                showResult(`❌ Ошибка конфигурации: ${error.message}`, 'error');
+            }
+        }
+        
+        // Обновление статуса подключения
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            if (isConnected) {
+                statusElement.textContent = '✅ Подключено к Firebase';
+                statusElement.className = 'status connected';
+            } else {
+                statusElement.textContent = '⚠️ Не подключено к Firebase';
+                statusElement.className = 'status disconnected';
+            }
+        }
+        
+        // Генерация уникального ID
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+        
+        // Основная функция отправки уведомления
+        async function sendNotification(userId, title, message, type = 'system', options = {}) {
+            if (!isConnected) {
+                throw new Error('Не подключено к Firebase');
+            }
+            
+            const notificationId = generateUniqueId();
+            
+            const notification = {
+                id: notificationId,
+                userId: userId,
+                title: title,
+                message: message,
+                type: type,
+                createdAt: new Date().toISOString(),
+                readAt: null,
+                isRead: false,
+                data: options.data || {},
+                relatedRequestId: options.relatedRequestId || null,
+                adminName: options.adminName || 'Тест Админ',
+                imageUrl: options.imageUrl || null
+            };
+            
+            await db.collection('notifications').doc(notificationId).set(notification);
+            return { success: true, id: notificationId };
+        }
+        
+        // Обработчик формы
+        document.getElementById('notificationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const button = document.getElementById('sendButton');
+            button.disabled = true;
+            button.textContent = '⏳ Отправка...';
+            
+            try {
+                const formData = {
+                    userId: document.getElementById('userId').value,
+                    title: document.getElementById('title').value,
+                    message: document.getElementById('message').value,
+                    type: document.getElementById('type').value,
+                    adminName: document.getElementById('adminName').value,
+                    relatedRequestId: document.getElementById('relatedRequestId').value || null
+                };
+                
+                const result = await sendNotification(
+                    formData.userId,
+                    formData.title,
+                    formData.message,
+                    formData.type,
+                    { 
+                        adminName: formData.adminName,
+                        relatedRequestId: formData.relatedRequestId 
+                    }
+                );
+                
+                showResult(`✅ Уведомление отправлено успешно!<br>ID: ${result.id}<br>📱 Проверьте мобильное приложение`, 'success');
+                
+            } catch (error) {
+                showResult(`❌ Ошибка отправки: ${error.message}`, 'error');
+            } finally {
+                button.disabled = false;
+                button.textContent = '📤 Отправить уведомление';
+            }
+        });
+        
+        // Быстрые тесты
+        async function sendTestSystem() {
+            if (!isConnected) {
+                showResult('❌ Сначала подключитесь к Firebase', 'error');
+                return;
+            }
+            
+            try {
+                const result = await sendNotification(
+                    'AC3077863',
+                    'Системное уведомление',
+                    'Это тестовое системное уведомление для проверки работы приложения',
+                    'system'
+                );
+                showResult(`✅ Системное уведомление отправлено! ID: ${result.id}`, 'success');
+            } catch (error) {
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        async function sendTestAdmin() {
+            if (!isConnected) {
+                showResult('❌ Сначала подключитесь к Firebase', 'error');
+                return;
+            }
+            
+            try {
+                const result = await sendNotification(
+                    'AC3077863',
+                    'Ответ администратора',
+                    'Ваша заявка рассмотрена. Все работы будут выполнены в течение 3 дней.',
+                    'admin_response',
+                    { 
+                        adminName: 'Иван Петров',
+                        relatedRequestId: 'test_request_123'
+                    }
+                );
+                showResult(`✅ Ответ администратора отправлен! ID: ${result.id}`, 'success');
+            } catch (error) {
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        async function sendTestService() {
+            if (!isConnected) {
+                showResult('❌ Сначала подключитесь к Firebase', 'error');
+                return;
+            }
+            
+            try {
+                const result = await sendNotification(
+                    'AC3077863',
+                    'Обновление по заявке',
+                    'Мастер выехал на выполнение работ по вашей заявке',
+                    'service_update',
+                    { relatedRequestId: 'test_request_456' }
+                );
+                showResult(`✅ Обновление по услуге отправлено! ID: ${result.id}`, 'success');
+            } catch (error) {
+                showResult(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+        
+        // Получение списка пользователей
+        async function getUsersList() {
+            if (!isConnected) {
+                showResult('❌ Сначала подключитесь к Firebase', 'error');
+                return;
+            }
+            
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const users = [];
+                
+                usersSnapshot.forEach(doc => {
+                    const userData = doc.data();
+                    const userId = userData.passport_number || userData.passportNumber;
+                    if (userId) {
+                        users.push({
+                            id: userId,
+                            name: userData.full_name || userData.fullName || 'Неизвестно',
+                            email: userData.email || 'Нет email'
+                        });
+                    }
+                });
+                
+                let usersList = users.map(user => 
+                    `• ${user.name} (${user.id}) - ${user.email}`
+                ).join('<br>');
+                
+                showResult(`👥 Найдено пользователей: ${users.length}<br><br>${usersList}`, 'info');
+                
+            } catch (error) {
+                showResult(`❌ Ошибка получения пользователей: ${error.message}`, 'error');
+            }
+        }
+        
+        // Показ результата
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            
+            // Прокрутка к результату
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Инициализация
+        updateConnectionStatus();
+    </script>
+</body>
+</html> 

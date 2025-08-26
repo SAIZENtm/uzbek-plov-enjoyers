@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔔 Исправление Уведомлений - Newport Resident</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #bd2130);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+
+        
+
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .diagnostics {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .token-display {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border: 1px solid #dee2e6;
+        }
+        .progress {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 25px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            border-color: #007bff;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,123,255,0.1);
+        }
+        .test-message {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+        .small-text {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Исправление Уведомлений</h1>
+        <p style="text-align: center; color: #666; font-size: 1.1em;">
+            Комплексный инструмент для диагностики и исправления push-уведомлений
+        </p>
+
+        <!-- Диагностика -->
+        <div class="section">
+            <h3><span class="emoji">🔍</span>Диагностика системы</h3>
+            <p>Проверим состояние FCM сервиса и возможность получения токенов.</p>
+            <button onclick="runDiagnostics()" id="diagBtn">Запустить диагностику</button>
+            <div id="diagnosticsResult" class="diagnostics" style="display: none;"></div>
+            <div id="progressContainer" style="display: none;">
+                <div class="progress">
+                    <div class="progress-bar" id="progressBar">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Получение FCM токена -->
+        <div class="section">
+            <h3><span class="emoji">📱</span>Получение FCM токена</h3>
+            <p>Попытаемся получить FCM токен для push-уведомлений.</p>
+            <button onclick="getFCMToken()" id="tokenBtn">Получить FCM токен</button>
+            <button onclick="copyTokenToClipboard()" id="copyTokenBtn" style="display: none;">Копировать токен</button>
+            <div id="fcmTokenResult" class="token-display" style="display: none;"></div>
+        </div>
+
+        <!-- Поиск сохраненных токенов -->
+        <div class="section">
+            <h3><span class="emoji">🔎</span>Поиск сохраненных токенов</h3>
+            <div class="form-group">
+                <label for="searchPhone">Номер телефона:</label>
+                <input type="tel" id="searchPhone" placeholder="+998998071400" value="+998998071400">
+            </div>
+            <div class="form-group">
+                <label for="searchBlock">Блок:</label>
+                <select id="searchBlock">
+                    <option value="">Все блоки</option>
+                    <option value="D BLOK">D BLOK</option>
+                    <option value="E BLOK">E BLOK</option>
+                    <option value="F BLOK">F BLOK</option>
+                    <option value="G BLOK">G BLOK</option>
+                    <option value="H BLOK">H BLOK</option>
+                    <option value="I BLOK">I BLOK</option>
+                    <option value="J BLOK">J BLOK</option>
+                    <option value="O3">O3</option>
+                    <option value="O5">O5</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="searchApartment">Квартира:</label>
+                <input type="text" id="searchApartment" placeholder="102" value="102">
+            </div>
+            <button onclick="searchTokens()" id="searchBtn">Найти токены</button>
+            <div id="tokenSearchResult" style="display: none;"></div>
+        </div>
+
+        <!-- Сохранение токена -->
+        <div class="section">
+            <h3><span class="emoji">💾</span>Сохранение FCM токена</h3>
+            <div class="form-group">
+                <label for="saveBlock">Блок:</label>
+                <select id="saveBlock" required>
+                    <option value="">Выберите блок</option>
+                    <option value="D BLOK">D BLOK</option>
+                    <option value="E BLOK">E BLOK</option>
+                    <option value="F BLOK">F BLOK</option>
+                    <option value="G BLOK">G BLOK</option>
+                    <option value="H BLOK">H BLOK</option>
+                    <option value="I BLOK">I BLOK</option>
+                    <option value="J BLOK">J BLOK</option>
+                    <option value="O3">O3</option>
+                    <option value="O5">O5</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="saveApartment">Номер квартиры:</label>
+                <input type="text" id="saveApartment" placeholder="102" value="102" required>
+            </div>
+            <div class="form-group">
+                <label for="customToken">FCM токен (оставьте пустым для автоматического получения):</label>
+                <textarea id="customToken" rows="3" placeholder="Вставьте FCM токен здесь или оставьте пустым"></textarea>
+            </div>
+            <button onclick="saveTokenToApartment()" id="saveTokenBtn">Сохранить токен</button>
+        </div>
+
+        <!-- Тестирование уведомлений -->
+        <div class="section">
+            <h3><span class="emoji">🧪</span>Тестирование уведомлений</h3>
+            <div class="test-message">
+                <p><strong>Важно:</strong> Для тестирования нужен сохраненный FCM токен.</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="testToken">FCM токен для теста:</label>
+                <input type="text" id="testToken" placeholder="Введите или получите FCM токен выше">
+                <button onclick="useCurrentToken()" type="button" style="margin-top: 10px;">Использовать текущий токен</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="testTitle">Заголовок уведомления:</label>
+                <input type="text" id="testTitle" value="Тестовое уведомление Newport" placeholder="Заголовок">
+            </div>
+            
+            <div class="form-group">
+                <label for="testMessage">Текст уведомления:</label>
+                <textarea id="testMessage" rows="3" placeholder="Текст уведомления">🏠 Система уведомлений работает корректно! Время отправки: ${new Date().toLocaleString('ru-RU')}</textarea>
+            </div>
+            
+            <div class="grid">
+                <div class="card">
+                    <h4>📢 Обычное уведомление</h4>
+                    <button onclick="sendTestNotification('normal')" class="btn-success">Отправить</button>
+                    <div class="small-text">Стандартное push-уведомление</div>
+                </div>
+                <div class="card">
+                    <h4>🚨 Важное уведомление</h4>
+                    <button onclick="sendTestNotification('important')" class="btn-warning">Отправить</button>
+                    <div class="small-text">Уведомление с высоким приоритетом</div>
+                </div>
+                <div class="card">
+                    <h4>🔥 Критическое уведомление</h4>
+                    <button onclick="sendTestNotification('critical')" class="btn-danger">Отправить</button>
+                    <div class="small-text">Критическое уведомление с звуком</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Исправление проблем -->
+        <div class="section">
+            <h3><span class="emoji">🔧</span>Автоматическое исправление</h3>
+            <p>Автоматически исправим известные проблемы с уведомлениями.</p>
+            <div class="grid">
+                <div class="card">
+                    <h4>🔄 Пересоздать токен</h4>
+                    <button onclick="recreateFCMToken()">Пересоздать</button>
+                    <div class="small-text">Получит новый FCM токен принудительно</div>
+                </div>
+                <div class="card">
+                    <h4>🧹 Очистить кэш</h4>
+                    <button onclick="clearNotificationCache()">Очистить</button>
+                    <div class="small-text">Очистит кэш браузера для FCM</div>
+                </div>
+                <div class="card">
+                    <h4>🔐 Проверить разрешения</h4>
+                    <button onclick="checkPermissions()">Проверить</button>
+                    <div class="small-text">Проверит разрешения на уведомления</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+        import { getMessaging, getToken, isSupported } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8xhHaOKdtlHLEDjGU0u1zl1YwdO6vfHA",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.appspot.com",
+            messagingSenderId: "1051980510754",
+            appId: "1:1051980510754:web:bbf41c1a9af4caba03cd06",
+            measurementId: "G-7J3NQT4V88"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        let messaging = null;
+        let currentFCMToken = null;
+
+        // Инициализация FCM
+        async function initializeMessaging() {
+            try {
+                const supported = await isSupported();
+                if (supported) {
+                    messaging = getMessaging(app);
+                    showStatus('✅ Firebase Messaging поддерживается', 'success');
+                    return true;
+                } else {
+                    showStatus('❌ Firebase Messaging не поддерживается в этом браузере', 'error');
+                    return false;
+                }
+            } catch (error) {
+                showStatus(`❌ Ошибка инициализации FCM: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            statusDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function addToDiagnostics(message) {
+            const diagnosticsDiv = document.getElementById('diagnosticsResult');
+            diagnosticsDiv.style.display = 'block';
+            diagnosticsDiv.innerHTML += `${new Date().toLocaleTimeString()}: ${message}\n`;
+            diagnosticsDiv.scrollTop = diagnosticsDiv.scrollHeight;
+        }
+
+        function updateProgress(percent, text = '') {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            progressContainer.style.display = 'block';
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = text || `${percent}%`;
+        }
+
+        async function runDiagnostics() {
+            const diagBtn = document.getElementById('diagBtn');
+            diagBtn.disabled = true;
+            diagBtn.textContent = 'Диагностика...';
+            
+            const diagnosticsDiv = document.getElementById('diagnosticsResult');
+            diagnosticsDiv.innerHTML = '';
+            diagnosticsDiv.style.display = 'block';
+            
+            try {
+                updateProgress(10, 'Проверка браузера...');
+                addToDiagnostics('🔍 Начинаем диагностику системы уведомлений');
+                addToDiagnostics(`📱 User Agent: ${navigator.userAgent}`);
+                addToDiagnostics(`🌐 URL: ${window.location.href}`);
+                addToDiagnostics(`🔐 HTTPS: ${window.location.protocol === 'https:'}`);
+                
+                updateProgress(20, 'Проверка Service Worker...');
+                if ('serviceWorker' in navigator) {
+                    addToDiagnostics('✅ Service Worker поддерживается');
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    addToDiagnostics(`📋 Service Worker зарегистрирован: ${!!registration}`);
+                } else {
+                    addToDiagnostics('❌ Service Worker не поддерживается');
+                }
+                
+                updateProgress(30, 'Проверка уведомлений...');
+                addToDiagnostics(`🔔 Notification API: ${'Notification' in window}`);
+                if ('Notification' in window) {
+                    addToDiagnostics(`🔐 Разрешение на уведомления: ${Notification.permission}`);
+                }
+                
+                updateProgress(50, 'Проверка Firebase...');
+                const messagingSupported = await initializeMessaging();
+                addToDiagnostics(`🔥 Firebase Messaging: ${messagingSupported ? 'Поддерживается' : 'Не поддерживается'}`);
+                
+                updateProgress(70, 'Тестирование соединения...');
+                try {
+                    const testDoc = await getDoc(doc(db, 'test', 'connection'));
+                    addToDiagnostics('✅ Соединение с Firestore работает');
+                } catch (error) {
+                    addToDiagnostics(`❌ Ошибка соединения с Firestore: ${error.message}`);
+                }
+                
+                updateProgress(90, 'Проверка FCM токена...');
+                if (messaging) {
+                    try {
+                        const token = await getToken(messaging, { 
+                            vapidKey: 'BEHMYWsYFvITZOcxNnPTB5U1g51rYBQMW8R7t9IuFrYo_dxSqy0m2VHk5t9Q_GFcvP_Y' 
+                        });
+                        if (token) {
+                            addToDiagnostics(`✅ FCM токен получен: ${token.substring(0, 30)}...`);
+                            currentFCMToken = token;
+                        } else {
+                            addToDiagnostics('❌ Не удалось получить FCM токен');
+                        }
+                    } catch (error) {
+                        addToDiagnostics(`❌ Ошибка получения FCM токена: ${error.message}`);
+                    }
+                }
+                
+                updateProgress(100, 'Готово');
+                addToDiagnostics('🎉 Диагностика завершена');
+                showStatus('✅ Диагностика завершена успешно', 'success');
+                
+            } catch (error) {
+                addToDiagnostics(`❌ Критическая ошибка: ${error.message}`);
+                showStatus(`❌ Ошибка диагностики: ${error.message}`, 'error');
+            } finally {
+                diagBtn.disabled = false;
+                diagBtn.textContent = 'Запустить диагностику';
+            }
+        }
+
+        async function getFCMToken() {
+            const tokenBtn = document.getElementById('tokenBtn');
+            tokenBtn.disabled = true;
+            tokenBtn.textContent = 'Получение токена...';
+            
+            try {
+                if (!messaging) {
+                    const initialized = await initializeMessaging();
+                    if (!initialized) return;
+                }
+
+                // Запрашиваем разрешение на уведомления
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    showStatus('❌ Пользователь отклонил разрешение на уведомления', 'error');
+                    return;
+                }
+
+                showStatus('⏳ Получаем FCM токен...', 'info');
+                
+                const token = await getToken(messaging, {
+                    vapidKey: 'BEHMYWsYFvITZOcxNnPTB5U1g51rYBQMW8R7t9IuFrYo_dxSqy0m2VHk5t9Q_GFcvP_Y'
+                });
+
+                if (token) {
+                    currentFCMToken = token;
+                    const tokenResult = document.getElementById('fcmTokenResult');
+                    const copyBtn = document.getElementById('copyTokenBtn');
+                    
+                    tokenResult.textContent = token;
+                    tokenResult.style.display = 'block';
+                    copyBtn.style.display = 'inline-block';
+                    
+                    // Автоматически заполняем поле для сохранения
+                    document.getElementById('customToken').value = token;
+                    document.getElementById('testToken').value = token;
+                    
+                    showStatus('✅ FCM токен успешно получен!', 'success');
+                } else {
+                    showStatus('❌ Не удалось получить FCM токен', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка получения FCM токена:', error);
+                showStatus(`❌ Ошибка: ${error.message}`, 'error');
+            } finally {
+                tokenBtn.disabled = false;
+                tokenBtn.textContent = 'Получить FCM токен';
+            }
+        }
+
+        async function copyTokenToClipboard() {
+            try {
+                await navigator.clipboard.writeText(currentFCMToken);
+                showStatus('✅ FCM токен скопирован в буфер обмена', 'success');
+            } catch (error) {
+                showStatus('❌ Не удалось скопировать токен', 'error');
+            }
+        }
+
+        async function searchTokens() {
+            const searchBtn = document.getElementById('searchBtn');
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Поиск...';
+            
+            const phone = document.getElementById('searchPhone').value.trim();
+            const block = document.getElementById('searchBlock').value.trim();
+            const apartment = document.getElementById('searchApartment').value.trim();
+            const resultDiv = document.getElementById('tokenSearchResult');
+            
+            try {
+                let results = [];
+                
+                // Поиск в разных коллекциях
+                if (block && apartment) {
+                    try {
+                        const apartmentDoc = await getDoc(doc(db, 'users', block, 'apartments', apartment));
+                        if (apartmentDoc.exists()) {
+                            const data = apartmentDoc.data();
+                            results.push({
+                                source: `users/${block}/apartments/${apartment}`,
+                                pushToken: data.pushToken,
+                                fcmTokens: data.fcmTokens || [],
+                                phone: data.phone_number,
+                                lastUpdate: data.lastPushTokenUpdate?.toDate?.()?.toLocaleString() || 'N/A'
+                            });
+                        }
+                    } catch (e) {
+                        console.log('Apartment document not found:', e.message);
+                    }
+                }
+                
+                if (phone) {
+                    const normalizedPhone = phone.replace(/[^0-9]/g, '');
+                    try {
+                        const fcmDoc = await getDoc(doc(db, 'fcm_tokens', normalizedPhone));
+                        if (fcmDoc.exists()) {
+                            const data = fcmDoc.data();
+                            results.push({
+                                source: `fcm_tokens/${normalizedPhone}`,
+                                tokens: data.tokens || [],
+                                phone: data.phoneNumber,
+                                block: data.blockId,
+                                apartment: data.apartmentNumber,
+                                lastUpdate: data.lastTokenUpdate?.toDate?.()?.toLocaleString() || 'N/A'
+                            });
+                        }
+                    } catch (e) {
+                        console.log('FCM token document not found:', e.message);
+                    }
+                }
+                
+                // Отображение результатов
+                resultDiv.style.display = 'block';
+                if (results.length === 0) {
+                    resultDiv.innerHTML = '<div class="status warning">❌ Токены не найдены</div>';
+                } else {
+                    let html = '<h4>🔍 Найденные токены:</h4>';
+                    results.forEach((result, index) => {
+                        html += `
+                            <div class="status info" style="margin: 10px 0;">
+                                <strong>Источник:</strong> ${result.source}<br>
+                                <strong>Телефон:</strong> ${result.phone || 'N/A'}<br>
+                                ${result.pushToken ? `<strong>Push Token:</strong> ${result.pushToken.substring(0, 30)}...<br>` : ''}
+                                ${result.fcmTokens ? `<strong>FCM Tokens:</strong> ${result.fcmTokens.length} шт.<br>` : ''}
+                                ${result.tokens ? `<strong>Tokens:</strong> ${result.tokens.length} шт.<br>` : ''}
+                                <strong>Последнее обновление:</strong> ${result.lastUpdate}
+                            </div>
+                        `;
+                    });
+                    resultDiv.innerHTML = html;
+                }
+                
+                showStatus(`✅ Поиск завершен. Найдено: ${results.length} записей`, 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Ошибка поиска: ${error.message}`, 'error');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Найти токены';
+            }
+        }
+
+        async function saveTokenToApartment() {
+            const saveBtn = document.getElementById('saveTokenBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Сохранение...';
+            
+            const block = document.getElementById('saveBlock').value.trim();
+            const apartment = document.getElementById('saveApartment').value.trim();
+            let token = document.getElementById('customToken').value.trim();
+            
+            if (!block || !apartment) {
+                showStatus('❌ Укажите блок и номер квартиры', 'error');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Сохранить токен';
+                return;
+            }
+            
+            try {
+                // Если токен не указан, получаем его автоматически
+                if (!token) {
+                    if (!messaging) {
+                        const initialized = await initializeMessaging();
+                        if (!initialized) return;
+                    }
+                    
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                        showStatus('❌ Разрешение на уведомления не предоставлено', 'error');
+                        return;
+                    }
+                    
+                    token = await getToken(messaging, {
+                        vapidKey: 'BEHMYWsYFvITZOcxNnPTB5U1g51rYBQMW8R7t9IuFrYo_dxSqy0m2VHk5t9Q_GFcvP_Y'
+                    });
+                    
+                    if (!token) {
+                        showStatus('❌ Не удалось получить FCM токен', 'error');
+                        return;
+                    }
+                }
+                
+                currentFCMToken = token;
+                showStatus('⏳ Сохраняем токен в базу данных...', 'info');
+                
+                // Сохраняем токен в документ квартиры
+                const apartmentRef = doc(db, 'users', block, 'apartments', apartment);
+                await setDoc(apartmentRef, {
+                    pushToken: token,
+                    fcmTokens: [token],
+                    lastPushTokenUpdate: new Date(),
+                    lastTokenUpdate: new Date(),
+                    blockName: block,
+                    apartmentNumber: apartment
+                }, { merge: true });
+                
+                showStatus(`✅ FCM токен успешно сохранен для квартиры ${apartment} в блоке ${block}`, 'success');
+                
+                // Обновляем поле для тестирования
+                document.getElementById('testToken').value = token;
+                
+            } catch (error) {
+                console.error('Ошибка сохранения токена:', error);
+                showStatus(`❌ Ошибка сохранения: ${error.message}`, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Сохранить токен';
+            }
+        }
+
+        function useCurrentToken() {
+            if (currentFCMToken) {
+                document.getElementById('testToken').value = currentFCMToken;
+                showStatus('✅ Текущий токен добавлен в поле для тестирования', 'success');
+            } else {
+                showStatus('❌ Сначала получите FCM токен', 'warning');
+            }
+        }
+
+        async function sendTestNotification(priority = 'normal') {
+            const token = document.getElementById('testToken').value.trim();
+            const title = document.getElementById('testTitle').value.trim();
+            let message = document.getElementById('testMessage').value.trim();
+            
+            if (!token) {
+                showStatus('❌ Укажите FCM токен для отправки уведомления', 'error');
+                return;
+            }
+            
+            if (!title || !message) {
+                showStatus('❌ Укажите заголовок и текст уведомления', 'error');
+                return;
+            }
+            
+            // Заменяем шаблон времени
+            message = message.replace('${new Date().toLocaleString(\'ru-RU\')}', new Date().toLocaleString('ru-RU'));
+            
+            try {
+                showStatus('⏳ Отправляем тестовое уведомление...', 'info');
+                
+                // Здесь мы используем Cloud Function для отправки уведомления
+                // Вместо этого мы можем использовать API FCM напрямую (требует server key)
+                const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'key=YOUR_SERVER_KEY', // Нужен серверный ключ
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        to: token,
+                        notification: {
+                            title: title,
+                            body: message,
+                            priority: priority === 'critical' ? 'high' : 'normal',
+                            sound: priority === 'critical' ? 'default' : 'none'
+                        },
+                        data: {
+                            type: 'test',
+                            priority: priority,
+                            timestamp: Date.now().toString()
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    showStatus(`✅ Тестовое уведомление (${priority}) отправлено!`, 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('Ошибка отправки уведомления:', error);
+                showStatus(`❌ Не удалось отправить уведомление. Для отправки нужен серверный ключ FCM.`, 'warning');
+                showStatus(`💡 Токен сохранен - используйте его в admin панели для отправки уведомлений.`, 'info');
+            }
+        }
+
+        async function recreateFCMToken() {
+            try {
+                showStatus('⏳ Пересоздаем FCM токен...', 'info');
+                
+                if (!messaging) {
+                    const initialized = await initializeMessaging();
+                    if (!initialized) return;
+                }
+                
+                // Удаляем старый токен
+                await messaging.deleteToken();
+                
+                // Получаем новый токен
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    showStatus('❌ Разрешение на уведомления отклонено', 'error');
+                    return;
+                }
+                
+                const newToken = await getToken(messaging, {
+                    vapidKey: 'BEHMYWsYFvITZOcxNnPTB5U1g51rYBQMW8R7t9IuFrYo_dxSqy0m2VHk5t9Q_GFcvP_Y'
+                });
+                
+                if (newToken) {
+                    currentFCMToken = newToken;
+                    document.getElementById('fcmTokenResult').textContent = newToken;
+                    document.getElementById('fcmTokenResult').style.display = 'block';
+                    document.getElementById('copyTokenBtn').style.display = 'inline-block';
+                    document.getElementById('customToken').value = newToken;
+                    document.getElementById('testToken').value = newToken;
+                    
+                    showStatus('✅ Новый FCM токен создан успешно!', 'success');
+                } else {
+                    showStatus('❌ Не удалось создать новый токен', 'error');
+                }
+                
+            } catch (error) {
+                showStatus(`❌ Ошибка пересоздания токена: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearNotificationCache() {
+            try {
+                showStatus('⏳ Очищаем кэш уведомлений...', 'info');
+                
+                // Очищаем localStorage
+                localStorage.removeItem('fcm_token');
+                localStorage.removeItem('notification_permission');
+                
+                // Очищаем sessionStorage
+                sessionStorage.clear();
+                
+                // Отменяем регистрацию Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                    }
+                }
+                
+                showStatus('✅ Кэш уведомлений очищен. Перезагрузите страницу.', 'success');
+                
+            } catch (error) {
+                showStatus(`❌ Ошибка очистки кэша: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkPermissions() {
+            try {
+                showStatus('⏳ Проверяем разрешения...', 'info');
+                
+                let html = '<div class="status info"><h4>🔐 Состояние разрешений:</h4>';
+                
+                // Проверяем разрешение на уведомления
+                if ('Notification' in window) {
+                    html += `<strong>Уведомления:</strong> ${Notification.permission}<br>`;
+                } else {
+                    html += '<strong>Уведомления:</strong> Не поддерживаются<br>';
+                }
+                
+                // Проверяем Service Worker
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    html += `<strong>Service Worker:</strong> ${registration ? 'Зарегистрирован' : 'Не зарегистрирован'}<br>`;
+                } else {
+                    html += '<strong>Service Worker:</strong> Не поддерживается<br>';
+                }
+                
+                // Проверяем Firebase Messaging
+                const supported = await isSupported();
+                html += `<strong>Firebase Messaging:</strong> ${supported ? 'Поддерживается' : 'Не поддерживается'}<br>`;
+                
+                html += '</div>';
+                
+                showStatus(html, 'info');
+                
+            } catch (error) {
+                showStatus(`❌ Ошибка проверки разрешений: ${error.message}`, 'error');
+            }
+        }
+
+        // Глобальные функции
+        window.runDiagnostics = runDiagnostics;
+        window.getFCMToken = getFCMToken;
+        window.copyTokenToClipboard = copyTokenToClipboard;
+        window.searchTokens = searchTokens;
+        window.saveTokenToApartment = saveTokenToApartment;
+        window.useCurrentToken = useCurrentToken;
+        window.sendTestNotification = sendTestNotification;
+        window.recreateFCMToken = recreateFCMToken;
+        window.clearNotificationCache = clearNotificationCache;
+        window.checkPermissions = checkPermissions;
+
+        // Инициализация при загрузке
+        window.addEventListener('load', async () => {
+            await initializeMessaging();
+            showStatus('🚀 Инструмент исправления уведомлений готов к работе', 'info');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Apartment Data - Newport Resident</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            display: block;
+            display: inline;
+            margin: auto;
+
+
+            
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .apartment-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Create Apartment Data</h1>
+
+        <!-- Search Section -->
+        <div class="section">
+            <h3>🔍 Search Existing Data</h3>
+            <div class="form-group">
+                <label for="searchBlock">Block:</label>
+                <select id="searchBlock">
+                    <option value="">All Blocks</option>
+                    <option value="D BLOK">D BLOK</option>
+                    <option value="E BLOK">E BLOK</option>
+                    <option value="F BLOK">F BLOK</option>
+                    <option value="G BLOK">G BLOK</option>
+                    <option value="H BLOK">H BLOK</option>
+                    <option value="I BLOK">I BLOK</option>
+                    <option value="J BLOK">J BLOK</option>
+                    <option value="O3">O3</option>
+                    <option value="O5">O5</option>
+                </select>
+            </div>
+            <button onclick="searchApartments()">Search Apartments</button>
+            <div id="searchResults" class="search-results" style="display: none;"></div>
+        </div>
+
+        <!-- Create Section -->
+        <div class="section">
+            <h3>➕ Create New Apartment</h3>
+            
+            <div class="form-group">
+                <label for="blockName">Block Name:</label>
+                <select id="blockName" required>
+                    <option value="">Select Block</option>
+                    <option value="D BLOK">D BLOK</option>
+                    <option value="E BLOK">E BLOK</option>
+                    <option value="F BLOK">F BLOK</option>
+                    <option value="G BLOK">G BLOK</option>
+                    <option value="H BLOK">H BLOK</option>
+                    <option value="I BLOK">I BLOK</option>
+                    <option value="J BLOK">J BLOK</option>
+                    <option value="O3">O3</option>
+                    <option value="O5">O5</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="apartmentNumber">Apartment Number:</label>
+                <input type="text" id="apartmentNumber" placeholder="e.g., 102" value="102" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input type="tel" id="phoneNumber" placeholder="e.g., +998998071400" value="+998998071400" required>
+            </div>
+
+            <div class="form-group">
+                <label for="passportNumber">Passport Number:</label>
+                <input type="text" id="passportNumber" placeholder="e.g., AB1234567" required>
+            </div>
+
+            <div class="form-group">
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" placeholder="Enter first name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" placeholder="Enter last name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="middleName">Middle Name:</label>
+                <input type="text" id="middleName" placeholder="Enter middle name (optional)">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter email address (optional)">
+            </div>
+
+            <button onclick="createApartment()" id="createBtn">Create Apartment</button>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+        import { getFirestore, collection, doc, setDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC8xhHaOKdtlHLEDjGU0u1zl1YwdO6vfHA",
+            authDomain: "newport-resident.firebaseapp.com",
+            projectId: "newport-resident",
+            storageBucket: "newport-resident.appspot.com",
+            messagingSenderId: "1051980510754",
+            appId: "1:1051980510754:web:bbf41c1a9af4caba03cd06",
+            measurementId: "G-7J3NQT4V88"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            statusDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function searchApartments() {
+            const searchBlock = document.getElementById('searchBlock').value;
+            const resultsDiv = document.getElementById('searchResults');
+            
+            showStatus('🔍 Searching apartments...', 'info');
+            
+            try {
+                let apartments = [];
+                const blocks = searchBlock ? [searchBlock] : ['D BLOK', 'E BLOK', 'F BLOK', 'G BLOK', 'H BLOK', 'I BLOK', 'J BLOK', 'O3', 'O5'];
+                
+                for (const blockName of blocks) {
+                    try {
+                        const apartmentsRef = collection(db, 'users', blockName, 'apartments');
+                        const snapshot = await getDocs(apartmentsRef);
+                        
+                        snapshot.forEach(doc => {
+                            apartments.push({
+                                id: doc.id,
+                                block: blockName,
+                                ...doc.data()
+                            });
+                        });
+                    } catch (error) {
+                        console.log(`No apartments found in ${blockName}:`, error.message);
+                    }
+                }
+                
+                resultsDiv.style.display = 'block';
+                
+                if (apartments.length === 0) {
+                    resultsDiv.innerHTML = '<p><strong>No apartments found in any block.</strong></p>';
+                    showStatus('❌ No apartments found in the database.', 'warning');
+                } else {
+                    let html = `<p><strong>Found ${apartments.length} apartment(s):</strong></p>`;
+                    apartments.forEach(apt => {
+                        html += `
+                            <div class="apartment-item">
+                                <strong>Block:</strong> ${apt.block}<br>
+                                <strong>Apartment:</strong> ${apt.apartment_number || apt.id}<br>
+                                <strong>Phone:</strong> ${apt.phone_number || 'N/A'}<br>
+                                <strong>Name:</strong> ${apt.first_name || ''} ${apt.last_name || ''}<br>
+                                <strong>Passport:</strong> ${apt.passport_number || 'N/A'}
+                            </div>
+                        `;
+                    });
+                    resultsDiv.innerHTML = html;
+                    showStatus(`✅ Found ${apartments.length} apartment(s).`, 'success');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showStatus(`❌ Search failed: ${error.message}`, 'error');
+                resultsDiv.style.display = 'none';
+            }
+        }
+
+        async function createApartment() {
+            const blockName = document.getElementById('blockName').value.trim();
+            const apartmentNumber = document.getElementById('apartmentNumber').value.trim();
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const passportNumber = document.getElementById('passportNumber').value.trim();
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const middleName = document.getElementById('middleName').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!blockName || !apartmentNumber || !phoneNumber || !passportNumber || !firstName || !lastName) {
+                showStatus('❌ Please fill in all required fields.', 'error');
+                return;
+            }
+
+            const createBtn = document.getElementById('createBtn');
+            createBtn.disabled = true;
+            createBtn.textContent = 'Creating...';
+
+            try {
+                showStatus('🏗️ Creating apartment data...', 'info');
+
+                // Normalize phone number
+                const normalizedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+
+                // Create apartment data
+                const apartmentData = {
+                    apartment_number: apartmentNumber,
+                    phone_number: normalizedPhone,
+                    passport_number: passportNumber,
+                    first_name: firstName,
+                    last_name: lastName,
+                    middle_name: middleName || '',
+                    email: email || '',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    is_active: true,
+                    balance: 0,
+                    fcmTokens: [],
+                    pushToken: null
+                };
+
+                // Create apartment document
+                const apartmentRef = doc(db, 'users', blockName, 'apartments', apartmentNumber);
+                await setDoc(apartmentRef, apartmentData);
+
+                // Also create a backup reference by passport number for compatibility
+                const userRef = doc(db, 'users', passportNumber);
+                await setDoc(userRef, {
+                    ...apartmentData,
+                    block_name: blockName
+                });
+
+                // Create FCM token reference for easier lookup
+                const fcmRef = doc(db, 'fcm_tokens', normalizedPhone.replace(/[^0-9]/g, ''));
+                await setDoc(fcmRef, {
+                    phone_number: normalizedPhone,
+                    passport_number: passportNumber,
+                    block_name: blockName,
+                    apartment_number: apartmentNumber,
+                    created_at: new Date().toISOString()
+                });
+
+                showStatus(`✅ Successfully created apartment ${apartmentNumber} in ${blockName}!`, 'success');
+                
+                // Reset form
+                document.getElementById('apartmentNumber').value = '';
+                document.getElementById('phoneNumber').value = '';
+                document.getElementById('passportNumber').value = '';
+                document.getElementById('firstName').value = '';
+                document.getElementById('lastName').value = '';
+                document.getElementById('middleName').value = '';
+                document.getElementById('email').value = '';
+
+            } catch (error) {
+                console.error('Creation error:', error);
+                showStatus(`❌ Failed to create apartment: ${error.message}`, 'error');
+            } finally {
+                createBtn.disabled = false;
+                createBtn.textContent = 'Create Apartment';
+            }
+        }
+
+        // Make functions globally available
+        window.searchApartments = searchApartments;
+        window.createApartment = createApartment;
+
+        // Auto-search on page load to see what exists
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                searchApartments();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

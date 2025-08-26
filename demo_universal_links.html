@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Демо: Универсальные ссылки Newport</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+        }
+        .demo-section h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .link-demo {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            word-break: break-all;
+        }
+        .link-demo a {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .link-demo a:hover {
+            text-decoration: underline;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: transform 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-code img {
+            max-width: 200px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Демо: Универсальные ссылки Newport</h1>
+        
+        <div class="status success">
+            ✅ Система универсальных ссылок настроена и готова к тестированию!
+        </div>
+        
+        <div class="demo-section">
+            <h3>🔗 Как работают универсальные ссылки</h3>
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <strong>Пользователь кликает по ссылке</strong><br>
+                    <small>Ссылка выглядит как обычная веб-ссылка</small>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <strong>Автоматическая проверка</strong><br>
+                    <small>Система определяет, установлено ли приложение</small>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <strong>Умное перенаправление</strong><br>
+                    <small>Приложение есть → открывается напрямую<br>
+                    Приложения нет → веб-версия с формой</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Тестовые ссылки</h3>
+            
+            <h4>1. Универсальная ссылка (рекомендуется)</h4>
+            <div class="link-demo">
+                <a href="universal_link_handler.html?invite=THZ5RZ9FD3D9DR01" target="_blank">
+                    universal_link_handler.html?invite=THZ5RZ9FD3D9DR01
+                </a>
+            </div>
+            <p><strong>Что происходит:</strong> Автоматически пытается открыть приложение, если не получается - переходит на веб-версию</p>
+            
+            <h4>2. Прямая веб-ссылка</h4>
+            <div class="link-demo">
+                <a href="invite_web.html?invite=THZ5RZ9FD3D9DR01" target="_blank">
+                    invite_web.html?invite=THZ5RZ9FD3D9DR01
+                </a>
+            </div>
+            <p><strong>Что происходит:</strong> Сразу открывает веб-версию с формой регистрации</p>
+            
+            <h4>3. Deep link (только для приложения)</h4>
+            <div class="link-demo">
+                <a href="newport://invite/THZ5RZ9FD3D9DR01">
+                    newport://invite/THZ5RZ9FD3D9DR01
+                </a>
+            </div>
+            <p><strong>Что происходит:</strong> Работает только если приложение установлено, иначе ничего не происходит</p>
+        </div>
+
+        <div class="demo-section">
+            <h3>📱 QR код для мобильного тестирования</h3>
+            <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=universal_link_handler.html?invite=THZ5RZ9FD3D9DR01" alt="QR Code">
+            </div>
+            <p><strong>Инструкция:</strong> Отсканируйте QR код камерой телефона и нажмите на уведомление</p>
+        </div>
+
+        <div class="demo-section">
+            <h3>🎯 Тестирование различных сценариев</h3>
+            
+            <div class="status info">
+                <strong>Сценарий 1: Приложение установлено</strong><br>
+                • Ссылка открывает приложение напрямую<br>
+                • Пользователь сразу видит экран принятия инвайта<br>
+                • Данные предзаполнены из приглашения
+            </div>
+            
+            <div class="status info">
+                <strong>Сценарий 2: Приложение не установлено</strong><br>
+                • Показывается веб-страница с информацией о приглашении<br>
+                • Кнопки для скачивания из Google Play / App Store<br>
+                • Форма для регистрации с предзаполненными данными
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Инструменты для тестирования</h3>
+            <div style="text-align: center;">
+                <a href="test_invite_system.html" class="btn">
+                    🧪 Создать тестовый инвайт
+                </a>
+                <a href="universal_link_handler.html?invite=THZ5RZ9FD3D9DR01" class="btn btn-secondary">
+                    🔗 Тест универсальной ссылки
+                </a>
+                <a href="invite_web.html?invite=THZ5RZ9FD3D9DR01" class="btn btn-secondary">
+                    🌐 Тест веб-версии
+                </a>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>📋 Как поделиться ссылкой</h3>
+            <p>Теперь вы можете поделиться ссылкой любым способом:</p>
+            <ul>
+                <li><strong>WhatsApp/Telegram:</strong> Просто отправьте ссылку</li>
+                <li><strong>SMS:</strong> Скопируйте и отправьте</li>
+                <li><strong>Email:</strong> Вставьте в письмо</li>
+                <li><strong>QR код:</strong> Покажите код для сканирования</li>
+                <li><strong>Социальные сети:</strong> Опубликуйте как пост</li>
+            </ul>
+            
+            <div class="status success">
+                <strong>Преимущество:</strong> Одна ссылка работает везде - и в приложении, и в браузере!
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>⚙️ Для разработчиков</h3>
+            <p>Система использует следующие технологии:</p>
+            <ul>
+                <li><strong>JavaScript:</strong> Определение платформы и попытка запуска приложения</li>
+                <li><strong>Deep Links:</strong> Прямое открытие приложения</li>
+                <li><strong>Fallback:</strong> Автоматический переход на веб-версию</li>
+                <li><strong>Firebase:</strong> Хранение данных приглашений</li>
+                <li><strong>Responsive Design:</strong> Адаптация под все устройства</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Firebase Debug - Newport</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Firebase Debug - Newport</h1>
+    
+    <div id="status" class="test info">
+        <h3>📊 Статус подключения</h3>
+        <p>Проверяем подключение к Firebase...</p>
+    </div>
+
+    <div class="test">
+        <h3>🧪 Тест 1: Создание документа notifications</h3>
+        <button onclick="testNotifications()">Тест notifications</button>
+        <div id="test1"></div>
+    </div>
+
+    <div class="test">
+        <h3>🧪 Тест 2: Создание FCM токена в квартире</h3>
+        <select id="blockSelect">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+        </select>
+        <input id="apartmentInput" placeholder="Номер квартиры (например: 01-222)" value="01-222">
+        <button onclick="testApartment()">Тест apartment</button>
+        <div id="test2"></div>
+    </div>
+
+    <div class="test">
+        <h3>🧪 Тест 3: Чтение данных квартир</h3>
+        <button onclick="testReadApartments()">Тест чтения</button>
+        <div id="test3"></div>
+    </div>
+
+    <div class="test">
+        <h3>📝 Инструкции для исправления</h3>
+        <div class="warning">
+            <h4>Если тесты не проходят:</h4>
+            <ol>
+                <li><strong>Обновите правила Firestore:</strong>
+                    <br>• Откройте <a href="https://console.firebase.google.com/project/newport-23a19/firestore/rules" target="_blank">Firebase Console → Firestore → Rules</a>
+                    <br>• Скопируйте правила из файла <code>firestore.rules</code>
+                    <br>• Нажмите "Publish"
+                </li>
+                <li><strong>Или используйте временные правила для тестирования:</strong>
+                    <br>• Скопируйте правила из файла <code>firestore-test.rules</code>
+                    <br>• ⚠️ <strong>ВНИМАНИЕ:</strong> Эти правила открывают полный доступ!
+                </li>
+                <li><strong>Проверьте Cloud Functions:</strong>
+                    <br>• <code>cd functions && firebase deploy --only functions</code>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <div id="logs" class="log" style="display: none;"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase конфигурация
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJ1hQ7UNAQnU-hmsLxZkod3hLGQqsECzA",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.appspot.com",
+            messagingSenderId: "975439026355",
+            appId: "1:975439026355:web:64e1e0f9e893f37a2c6dc5"
+        };
+
+        // Инициализация Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            updateStatus('✅ Firebase подключен успешно', 'success');
+        } catch (error) {
+            updateStatus('❌ Ошибка подключения к Firebase: ' + error.message, 'error');
+        }
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs');
+            logsDiv.style.display = 'block';
+            const time = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `[${time}] ${message}<br>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<h3>📊 Статус подключения</h3><p>' + message + '</p>';
+            statusDiv.className = 'test ' + type;
+        }
+
+        function showResult(testId, message, type) {
+            const testDiv = document.getElementById(testId);
+            testDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            log(`Test ${testId}: ${message}`);
+        }
+
+        async function testNotifications() {
+            try {
+                log('Тест 1: Создание уведомления...');
+                
+                const testData = {
+                    userId: 'TEST_USER_123',
+                    title: 'Тест уведомления',
+                    message: 'Это тестовое сообщение',
+                    type: 'test',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isRead: false,
+                    readAt: null
+                };
+
+                const docRef = await db.collection('notifications').add(testData);
+                showResult('test1', `✅ Уведомление создано! ID: ${docRef.id}`, 'success');
+                
+                // Ждем 2 секунды и проверяем Cloud Function
+                setTimeout(async () => {
+                    const doc = await docRef.get();
+                    const data = doc.data();
+                    if (data.pushSent !== undefined) {
+                        log('✅ Cloud Function сработала! pushSent: ' + data.pushSent);
+                    } else {
+                        log('⚠️ Cloud Function не сработала или еще выполняется');
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                showResult('test1', `❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        async function testApartment() {
+            try {
+                const blockId = document.getElementById('blockSelect').value;
+                const apartmentNumber = document.getElementById('apartmentInput').value;
+                
+                if (!apartmentNumber) {
+                    showResult('test2', '❌ Введите номер квартиры', 'error');
+                    return;
+                }
+
+                log(`Тест 2: Создание FCM токена в users/${blockId}/apartments/${apartmentNumber}`);
+                
+                const testToken = 'test_fcm_token_' + Date.now();
+                
+                await db.collection('users')
+                    .doc(blockId)
+                    .collection('apartments')
+                    .doc(apartmentNumber)
+                    .set({
+                        fcmTokens: [testToken],
+                        lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+                        full_name: 'Тестовый пользователь',
+                        phone: '+998901234567',
+                        passport_number: 'TEST123456'
+                    }, { merge: true });
+
+                showResult('test2', `✅ FCM токен создан в ${blockId}/${apartmentNumber}`, 'success');
+                
+            } catch (error) {
+                showResult('test2', `❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        async function testReadApartments() {
+            try {
+                log('Тест 3: Чтение квартир...');
+                
+                // Читаем блоки
+                const blocksSnapshot = await db.collection('users').get();
+                log(`Найдено блоков: ${blocksSnapshot.size}`);
+                
+                let totalApartments = 0;
+                for (const blockDoc of blocksSnapshot.docs) {
+                    const blockId = blockDoc.id;
+                    const apartmentsSnapshot = await db.collection('users')
+                        .doc(blockId)
+                        .collection('apartments')
+                        .limit(5)
+                        .get();
+                    
+                    log(`Блок ${blockId}: ${apartmentsSnapshot.size} квартир`);
+                    totalApartments += apartmentsSnapshot.size;
+                    
+                    apartmentsSnapshot.docs.forEach(apt => {
+                        const data = apt.data();
+                        log(`  - ${apt.id}: ${data.full_name || 'Нет имени'} (FCM токенов: ${data.fcmTokens?.length || 0})`);
+                    });
+                }
+                
+                showResult('test3', `✅ Найдено блоков: ${blocksSnapshot.size}, квартир: ${totalApartments}`, 'success');
+                
+            } catch (error) {
+                showResult('test3', `❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        // Автоматический тест при загрузке
+        window.onload = function() {
+            setTimeout(() => {
+                if (db) {
+                    testReadApartments();
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html> 

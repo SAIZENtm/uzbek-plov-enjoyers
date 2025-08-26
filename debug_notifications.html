@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Диагностика уведомлений Newport</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #2196F3;
+        }
+        
+        .section h2 {
+            color: #2196F3;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn.danger {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+        }
+        
+        .btn.success {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            transition: border-color 0.3s;
+        }
+        
+        .card:hover {
+            border-color: #2196F3;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            color: #2196F3;
+            border-bottom-color: #2196F3;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .console-line {
+            margin-bottom: 5px;
+        }
+        
+        .console-line.error {
+            color: #ff6b6b;
+        }
+        
+        .console-line.warning {
+            color: #ffa500;
+        }
+        
+        .console-line.success {
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Диагностика уведомлений Newport</h1>
+            <p>Инструмент для диагностики и исправления проблем с уведомлениями</p>
+        </div>
+        
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('diagnosis')">Диагностика</button>
+                <button class="tab" onclick="switchTab('create')">Создать уведомление</button>
+                <button class="tab" onclick="switchTab('users')">Пользователи</button>
+                <button class="tab" onclick="switchTab('fcm')">FCM Debug</button>
+            </div>
+            
+            <!-- Диагностика -->
+            <div id="diagnosis" class="tab-content active">
+                <div class="section">
+                    <h2>🔍 Полная диагностика системы</h2>
+                    <div class="form-group">
+                        <label>ID пользователя для диагностики:</label>
+                        <input type="text" id="diagnosticUserId" placeholder="Введите номер паспорта или телефон">
+                    </div>
+                    <button class="btn" onclick="runFullDiagnostic()">
+                        <span id="diagnosticLoader"></span>
+                        Запустить полную диагностику
+                    </button>
+                    <div id="diagnosticResult" class="result"></div>
+                </div>
+            </div>
+            
+            <!-- Создание уведомления -->
+            <div id="create" class="tab-content">
+                <div class="section">
+                    <h2>✉️ Создать тестовое уведомление</h2>
+                    <div class="form-group">
+                        <label>ID пользователя:</label>
+                        <input type="text" id="createUserId" placeholder="Номер паспорта">
+                    </div>
+                    <div class="form-group">
+                        <label>Заголовок:</label>
+                        <input type="text" id="createTitle" placeholder="Заголовок уведомления">
+                    </div>
+                    <div class="form-group">
+                        <label>Сообщение:</label>
+                        <textarea id="createMessage" placeholder="Текст уведомления"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип:</label>
+                        <select id="createType">
+                            <option value="admin_response">Ответ администратора</option>
+                            <option value="system">Системное</option>
+                            <option value="service_update">Обновление услуги</option>
+                            <option value="news">Новость</option>
+                        </select>
+                    </div>
+                    <button class="btn success" onclick="createTestNotification()">
+                        <span id="createLoader"></span>
+                        Создать уведомление
+                    </button>
+                    <div id="createResult" class="result"></div>
+                </div>
+            </div>
+            
+            <!-- Пользователи -->
+            <div id="users" class="tab-content">
+                <div class="section">
+                    <h2>👥 Анализ пользователей</h2>
+                    <button class="btn" onclick="analyzeUsers()">
+                        <span id="usersLoader"></span>
+                        Проанализировать пользователей
+                    </button>
+                    <div id="usersResult" class="result"></div>
+                </div>
+            </div>
+            
+            <!-- FCM Debug -->
+            <div id="fcm" class="tab-content">
+                <div class="section">
+                    <h2>🔔 FCM Диагностика</h2>
+                    <div class="form-group">
+                        <label>FCM Token:</label>
+                        <textarea id="fcmToken" placeholder="Вставьте FCM токен"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Заголовок:</label>
+                        <input type="text" id="fcmTitle" placeholder="Заголовок push">
+                    </div>
+                    <div class="form-group">
+                        <label>Сообщение:</label>
+                        <textarea id="fcmMessage" placeholder="Текст push сообщения"></textarea>
+                    </div>
+                    <button class="btn" onclick="testFCMPush()">
+                        <span id="fcmLoader"></span>
+                        Отправить тестовый push
+                    </button>
+                    <div id="fcmResult" class="result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase configuration
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBaZ2_2FbDOXjdFN_hBJFrqDLJwrKJfIo4",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.appspot.com",
+            messagingSenderId: "346693260115",
+            appId: "1:346693260115:web:b6b6b6b6b6b6b6b6b6b6b6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const functions = getFunctions(app);
+        
+        // Глобальные переменные для доступа из HTML
+        window.db = db;
+        window.functions = functions;
+        window.firebase = { doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, collection, httpsCallable };
+
+        // Utility functions
+        window.log = function(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const console = document.getElementById('console');
+            if (console) {
+                const line = document.createElement('div');
+                line.className = `console-line ${type}`;
+                line.textContent = `[${timestamp}] ${message}`;
+                console.appendChild(line);
+                console.scrollTop = console.scrollHeight;
+            }
+        };
+
+        window.clearLog = function() {
+            const console = document.getElementById('console');
+            if (console) {
+                console.innerHTML = '';
+            }
+        };
+
+        // Функция для отображения результатов
+        window.showResult = function(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = content;
+                element.className = `result ${type}`;
+                element.style.display = 'block';
+            }
+        };
+
+        // Функция для показа загрузки
+        window.showLoader = function(elementId, show = true) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = show ? '<div class="loading"></div>' : '';
+            }
+        };
+
+        console.log('Firebase initialized successfully');
+        window.log('Firebase initialized successfully', 'success');
+    </script>
+
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        // Полная диагностика
+        async function runFullDiagnostic() {
+            const userId = document.getElementById('diagnosticUserId').value;
+            if (!userId) {
+                showResult('diagnosticResult', 'Пожалуйста, введите ID пользователя', 'error');
+                return;
+            }
+
+            showLoader('diagnosticLoader', true);
+            let diagnosticLog = '';
+
+            try {
+                diagnosticLog += `=== ДИАГНОСТИКА СИСТЕМЫ УВЕДОМЛЕНИЙ ===\n`;
+                diagnosticLog += `Пользователь: ${userId}\n`;
+                diagnosticLog += `Время: ${new Date().toLocaleString()}\n\n`;
+
+                // 1. Проверка пользователя в разных коллекциях
+                diagnosticLog += `🔍 ПРОВЕРКА ПОЛЬЗОВАТЕЛЯ В БАЗЕ ДАННЫХ:\n`;
+                
+                const userResults = await checkUserInCollections(userId);
+                diagnosticLog += userResults.log;
+                
+                // 2. Проверка уведомлений
+                diagnosticLog += `\n📨 ПРОВЕРКА УВЕДОМЛЕНИЙ:\n`;
+                
+                const notificationResults = await checkNotifications(userId);
+                diagnosticLog += notificationResults.log;
+                
+                // 3. Проверка FCM токенов
+                diagnosticLog += `\n🔔 ПРОВЕРКА FCM ТОКЕНОВ:\n`;
+                
+                const fcmResults = await checkFCMTokens(userId);
+                diagnosticLog += fcmResults.log;
+                
+                // 4. Проверка заявок на обслуживание
+                diagnosticLog += `\n🔧 ПРОВЕРКА ЗАЯВОК НА ОБСЛУЖИВАНИЕ:\n`;
+                
+                const serviceRequestResults = await checkServiceRequests(userId);
+                diagnosticLog += serviceRequestResults.log;
+                
+                // 5. Итоговый анализ
+                diagnosticLog += `\n📊 ИТОГОВЫЙ АНАЛИЗ:\n`;
+                
+                const issues = [];
+                if (!userResults.found) issues.push('Пользователь не найден в базе данных');
+                if (notificationResults.count === 0) issues.push('Нет уведомлений для пользователя');
+                if (fcmResults.tokenCount === 0) issues.push('Нет FCM токенов');
+                if (serviceRequestResults.count === 0) issues.push('Нет заявок на обслуживание');
+                
+                if (issues.length === 0) {
+                    diagnosticLog += `✅ Проблем не обнаружено\n`;
+                } else {
+                    diagnosticLog += `❌ Обнаружены проблемы:\n`;
+                    issues.forEach(issue => diagnosticLog += `  - ${issue}\n`);
+                }
+                
+                // 6. Рекомендации
+                diagnosticLog += `\n💡 РЕКОМЕНДАЦИИ:\n`;
+                diagnosticLog += await generateRecommendations(userResults, notificationResults, fcmResults, serviceRequestResults);
+
+                showResult('diagnosticResult', diagnosticLog, 'info');
+                
+            } catch (error) {
+                diagnosticLog += `\n❌ ОШИБКА ДИАГНОСТИКИ: ${error.message}\n`;
+                showResult('diagnosticResult', diagnosticLog, 'error');
+            } finally {
+                showLoader('diagnosticLoader', false);
+            }
+        }
+
+        // Проверка пользователя в разных коллекциях
+        async function checkUserInCollections(userId) {
+            let log = '';
+            let found = false;
+            
+            const collections = ['users', 'residents', 'clients'];
+            const searchFields = ['passport_number', 'passportNumber', 'phone', 'id'];
+            
+            for (const collectionName of collections) {
+                log += `  Проверка коллекции "${collectionName}":\n`;
+                
+                try {
+                    // Поиск по прямому документу
+                    const directDoc = await firebase.getDoc(firebase.doc(db, collectionName, userId));
+                    if (directDoc.exists()) {
+                        log += `    ✅ Найден документ по ID: ${userId}\n`;
+                        log += `    Данные: ${JSON.stringify(directDoc.data(), null, 2)}\n`;
+                        found = true;
+                        continue;
+                    }
+                    
+                    // Поиск по полям
+                    for (const field of searchFields) {
+                        const q = firebase.query(
+                            firebase.collection(db, collectionName), 
+                            firebase.where(field, '==', userId),
+                            firebase.limit(5)
+                        );
+                        const snapshot = await firebase.getDocs(q);
+                        
+                        if (!snapshot.empty) {
+                            log += `    ✅ Найден по полю "${field}": ${snapshot.size} документов\n`;
+                            snapshot.forEach(doc => {
+                                log += `      ID: ${doc.id}, Данные: ${JSON.stringify(doc.data(), null, 2)}\n`;
+                            });
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!found) {
+                        log += `    ❌ Не найден в коллекции "${collectionName}"\n`;
+                    }
+                    
+                } catch (error) {
+                    log += `    ❌ Ошибка при проверке коллекции "${collectionName}": ${error.message}\n`;
+                }
+            }
+            
+            return { found, log };
+        }
+
+        // Проверка уведомлений
+        async function checkNotifications(userId) {
+            let log = '';
+            let count = 0;
+            
+            try {
+                const identifiers = [userId];
+                
+                // Добавляем варианты для телефона
+                if (userId.startsWith('+')) {
+                    identifiers.push(userId.substring(1));
+                } else if (userId.match(/^\d+$/)) {
+                    identifiers.push('+' + userId);
+                }
+                
+                log += `  Поиск уведомлений для идентификаторов: ${identifiers.join(', ')}\n`;
+                
+                for (const identifier of identifiers) {
+                    const q = firebase.query(
+                        firebase.collection(db, 'notifications'),
+                        firebase.where('userId', '==', identifier),
+                        firebase.orderBy('createdAt', 'desc'),
+                        firebase.limit(10)
+                    );
+                    
+                    const snapshot = await firebase.getDocs(q);
+                    
+                    if (!snapshot.empty) {
+                        log += `    ✅ Найдено ${snapshot.size} уведомлений для "${identifier}"\n`;
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            log += `      - ${data.title} (${data.type}) - ${data.createdAt}\n`;
+                            count++;
+                        });
+                    } else {
+                        log += `    ❌ Нет уведомлений для "${identifier}"\n`;
+                    }
+                }
+                
+            } catch (error) {
+                log += `  ❌ Ошибка при проверке уведомлений: ${error.message}\n`;
+            }
+            
+            return { count, log };
+        }
+
+        // Проверка FCM токенов
+        async function checkFCMTokens(userId) {
+            let log = '';
+            let tokenCount = 0;
+            
+            try {
+                const collections = ['users', 'residents', 'clients'];
+                
+                for (const collectionName of collections) {
+                    const userDoc = await firebase.getDoc(firebase.doc(db, collectionName, userId));
+                    if (userDoc.exists()) {
+                        const data = userDoc.data();
+                        const fcmTokens = data.fcmTokens || [];
+                        
+                        if (fcmTokens.length > 0) {
+                            log += `  ✅ Найдено ${fcmTokens.length} FCM токенов в коллекции "${collectionName}"\n`;
+                            fcmTokens.forEach((token, index) => {
+                                log += `    ${index + 1}. ${token.substring(0, 20)}...\n`;
+                            });
+                            tokenCount += fcmTokens.length;
+                        } else {
+                            log += `  ❌ Нет FCM токенов в коллекции "${collectionName}"\n`;
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                log += `  ❌ Ошибка при проверке FCM токенов: ${error.message}\n`;
+            }
+            
+            return { tokenCount, log };
+        }
+
+        // Проверка заявок на обслуживание
+        async function checkServiceRequests(userId) {
+            let log = '';
+            let count = 0;
+            
+            try {
+                const q = firebase.query(
+                    firebase.collection(db, 'serviceRequests'),
+                    firebase.where('userId', '==', userId),
+                    firebase.orderBy('createdAt', 'desc'),
+                    firebase.limit(5)
+                );
+                
+                const snapshot = await firebase.getDocs(q);
+                
+                if (!snapshot.empty) {
+                    log += `  ✅ Найдено ${snapshot.size} заявок на обслуживание\n`;
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        log += `    - ${data.requestType} (${data.status}) - ${data.createdAt}\n`;
+                        count++;
+                    });
+                } else {
+                    log += `  ❌ Нет заявок на обслуживание\n`;
+                }
+                
+            } catch (error) {
+                log += `  ❌ Ошибка при проверке заявок: ${error.message}\n`;
+            }
+            
+            return { count, log };
+        }
+
+        // Генерация рекомендаций
+        async function generateRecommendations(userResults, notificationResults, fcmResults, serviceRequestResults) {
+            let recommendations = '';
+            
+            if (!userResults.found) {
+                recommendations += `1. Создать пользователя в базе данных\n`;
+                recommendations += `2. Проверить корректность номера паспорта\n`;
+            }
+            
+            if (notificationResults.count === 0) {
+                recommendations += `3. Создать тестовое уведомление\n`;
+                recommendations += `4. Проверить логику создания уведомлений в админ панели\n`;
+            }
+            
+            if (fcmResults.tokenCount === 0) {
+                recommendations += `5. Убедиться, что пользователь вошел в мобильное приложение\n`;
+                recommendations += `6. Проверить инициализацию FCM в приложении\n`;
+            }
+            
+            if (serviceRequestResults.count === 0) {
+                recommendations += `7. Создать тестовую заявку на обслуживание\n`;
+            }
+            
+            return recommendations || 'Дополнительные рекомендации не требуются';
+        }
+
+        // Создание тестового уведомления
+        async function createTestNotification() {
+            const userId = document.getElementById('createUserId').value;
+            const title = document.getElementById('createTitle').value;
+            const message = document.getElementById('createMessage').value;
+            const type = document.getElementById('createType').value;
+            
+            if (!userId || !title || !message) {
+                showResult('createResult', 'Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+            
+            showLoader('createLoader', true);
+            
+            try {
+                const notificationId = `test_${Date.now()}`;
+                const notification = {
+                    id: notificationId,
+                    userId: userId,
+                    title: title,
+                    message: message,
+                    type: type,
+                    createdAt: new Date().toISOString(),
+                    readAt: null,
+                    isRead: false,
+                    data: {},
+                    relatedRequestId: null,
+                    adminName: 'Диагностический инструмент',
+                    imageUrl: null
+                };
+                
+                await firebase.setDoc(firebase.doc(db, 'notifications', notificationId), notification);
+                
+                showResult('createResult', `✅ Уведомление создано успешно!\nID: ${notificationId}\nПроверьте мобильное приложение`, 'success');
+                
+            } catch (error) {
+                showResult('createResult', `❌ Ошибка при создании уведомления: ${error.message}`, 'error');
+            } finally {
+                showLoader('createLoader', false);
+            }
+        }
+
+        // Анализ пользователей
+        async function analyzeUsers() {
+            showLoader('usersLoader', true);
+            
+            try {
+                let analysis = '=== АНАЛИЗ ПОЛЬЗОВАТЕЛЕЙ ===\n\n';
+                
+                const collections = ['users', 'residents', 'clients'];
+                
+                for (const collectionName of collections) {
+                    analysis += `📁 Коллекция "${collectionName}":\n`;
+                    
+                    const snapshot = await firebase.getDocs(firebase.collection(db, collectionName));
+                    analysis += `  Всего документов: ${snapshot.size}\n`;
+                    
+                    let withPassport = 0;
+                    let withPhone = 0;
+                    let withFCM = 0;
+                    
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.passport_number || data.passportNumber) withPassport++;
+                        if (data.phone) withPhone++;
+                        if (data.fcmTokens && data.fcmTokens.length > 0) withFCM++;
+                    });
+                    
+                    analysis += `  С номером паспорта: ${withPassport}\n`;
+                    analysis += `  С номером телефона: ${withPhone}\n`;
+                    analysis += `  С FCM токенами: ${withFCM}\n\n`;
+                }
+                
+                // Анализ уведомлений
+                analysis += `📨 Анализ уведомлений:\n`;
+                const notificationsSnapshot = await firebase.getDocs(firebase.collection(db, 'notifications'));
+                analysis += `  Всего уведомлений: ${notificationsSnapshot.size}\n`;
+                
+                const userIds = new Set();
+                const types = {};
+                
+                notificationsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    userIds.add(data.userId);
+                    types[data.type] = (types[data.type] || 0) + 1;
+                });
+                
+                analysis += `  Уникальных пользователей: ${userIds.size}\n`;
+                analysis += `  По типам:\n`;
+                Object.entries(types).forEach(([type, count]) => {
+                    analysis += `    ${type}: ${count}\n`;
+                });
+                
+                showResult('usersResult', analysis, 'info');
+                
+            } catch (error) {
+                showResult('usersResult', `❌ Ошибка при анализе: ${error.message}`, 'error');
+            } finally {
+                showLoader('usersLoader', false);
+            }
+        }
+
+        // Тестирование FCM push
+        async function testFCMPush() {
+            const token = document.getElementById('fcmToken').value;
+            const title = document.getElementById('fcmTitle').value;
+            const message = document.getElementById('fcmMessage').value;
+            
+            if (!token || !title || !message) {
+                showResult('fcmResult', 'Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+            
+            showLoader('fcmLoader', true);
+            
+            try {
+                // Используем Cloud Function для отправки push
+                const sendPushNotification = firebase.httpsCallable(functions, 'sendPushNotification');
+                
+                const result = await sendPushNotification({
+                    tokens: [token],
+                    notification: {
+                        title: title,
+                        body: message
+                    },
+                    data: {
+                        type: 'test',
+                        source: 'diagnostic_tool'
+                    }
+                });
+                
+                showResult('fcmResult', `✅ Push уведомление отправлено!\nРезультат: ${JSON.stringify(result.data, null, 2)}`, 'success');
+                
+            } catch (error) {
+                showResult('fcmResult', `❌ Ошибка при отправке push: ${error.message}`, 'error');
+            } finally {
+                showLoader('fcmLoader', false);
+            }
+        }
+
+        // Добавить console для логов
+        document.addEventListener('DOMContentLoaded', function() {
+            const consoleDiv = document.createElement('div');
+            consoleDiv.id = 'console';
+            consoleDiv.className = 'console';
+            consoleDiv.style.display = 'none';
+            document.body.appendChild(consoleDiv);
+        });
+    </script>
+</body>
+</html> 

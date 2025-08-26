@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newport - Переход к приглашению</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            color: #666;
+            font-size: 16px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: transform 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .fallback {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .countdown {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">N</div>
+        <h1>Newport</h1>
+        
+        <div class="spinner"></div>
+        <div class="message" id="message">Открываем приложение...</div>
+        <div class="countdown" id="countdown">3</div>
+        
+        <div class="fallback" id="fallback" style="display: none;">
+            <h3>Приложение не найдено</h3>
+            <p>Переходим к веб-версии приглашения</p>
+            <a href="#" class="btn" id="webLink">Открыть веб-версию</a>
+        </div>
+    </div>
+
+    <script>
+        // Получаем ID приглашения из URL
+        function getInviteId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteParam = urlParams.get('invite');
+            
+            if (inviteParam) {
+                return inviteParam;
+            }
+            
+            // Из пути URL (например: /invite/ABC123)
+            const pathParts = window.location.pathname.split('/');
+            const inviteIndex = pathParts.indexOf('invite');
+            if (inviteIndex !== -1 && pathParts[inviteIndex + 1]) {
+                return pathParts[inviteIndex + 1];
+            }
+            
+            // Из hash
+            const hash = window.location.hash.substring(1);
+            if (hash.startsWith('invite/')) {
+                return hash.replace('invite/', '');
+            }
+            
+            return 'THZ5RZ9FD3D9DR01'; // Fallback для тестирования
+        }
+
+        // Определяем платформу
+        function getPlatform() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (/iphone|ipad|ipod/.test(userAgent)) {
+                return 'ios';
+            } else if (/android/.test(userAgent)) {
+                return 'android';
+            } else {
+                return 'web';
+            }
+        }
+
+        // Попытка открыть приложение
+        function attemptAppLaunch(inviteId) {
+            const platform = getPlatform();
+            const deepLink = `newport://invite/${inviteId}`;
+            
+            console.log('Attempting to open:', deepLink);
+            console.log('Platform:', platform);
+            
+            // Создаем невидимый iframe для попытки запуска
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+            
+            // Альтернативный метод для Android
+            if (platform === 'android') {
+                try {
+                    window.location.href = deepLink;
+                } catch (e) {
+                    console.log('Deep link failed:', e);
+                }
+            }
+            
+            // Для iOS используем скрытую ссылку
+            if (platform === 'ios') {
+                const link = document.createElement('a');
+                link.href = deepLink;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // Удаляем iframe через секунду
+            setTimeout(() => {
+                if (iframe.parentNode) {
+                    document.body.removeChild(iframe);
+                }
+            }, 1000);
+        }
+
+        // Обратный отсчет и fallback
+        function startCountdown(inviteId) {
+            let count = 3;
+            const countdownEl = document.getElementById('countdown');
+            const messageEl = document.getElementById('message');
+            const fallbackEl = document.getElementById('fallback');
+            const webLinkEl = document.getElementById('webLink');
+            
+            const interval = setInterval(() => {
+                count--;
+                countdownEl.textContent = count;
+                
+                if (count <= 0) {
+                    clearInterval(interval);
+                    
+                    // Показываем fallback
+                    messageEl.textContent = 'Приложение не отвечает';
+                    countdownEl.style.display = 'none';
+                    fallbackEl.style.display = 'block';
+                    
+                    // Настраиваем ссылку на веб-версию
+                    const webUrl = `invite_web.html?invite=${inviteId}`;
+                    webLinkEl.href = webUrl;
+                    
+                    // Автоматический переход через 2 секунды
+                    setTimeout(() => {
+                        window.location.href = webUrl;
+                    }, 2000);
+                }
+            }, 1000);
+        }
+
+        // Детекция ухода со страницы (означает, что приложение открылось)
+        let appOpened = false;
+        
+        function handleVisibilityChange() {
+            if (document.hidden) {
+                appOpened = true;
+                console.log('App likely opened - page became hidden');
+            }
+        }
+        
+        function handlePageHide() {
+            appOpened = true;
+            console.log('App likely opened - page hide event');
+        }
+        
+        function handleBlur() {
+            appOpened = true;
+            console.log('App likely opened - window blur event');
+        }
+
+        // Добавляем обработчики событий
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pagehide', handlePageHide);
+        window.addEventListener('blur', handleBlur);
+
+        // Основная логика
+        function init() {
+            const inviteId = getInviteId();
+            console.log('Invite ID:', inviteId);
+            
+            // Обновляем URL веб-версии
+            const webLinkEl = document.getElementById('webLink');
+            if (webLinkEl) {
+                webLinkEl.href = `invite_web.html?invite=${inviteId}`;
+            }
+            
+            // Попытка открыть приложение
+            setTimeout(() => {
+                attemptAppLaunch(inviteId);
+            }, 500);
+            
+            // Запускаем обратный отсчет
+            startCountdown(inviteId);
+            
+            // Проверяем, открылось ли приложение
+            setTimeout(() => {
+                if (!appOpened) {
+                    console.log('App did not open, showing fallback');
+                }
+            }, 4000);
+        }
+
+        // Запуск после загрузки страницы
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html> 

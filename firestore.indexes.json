@@ -1,0 +1,23 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "apartments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "block_name",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "apartment_number",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "phone",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+} 

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование системы инвайтов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .invite-id {
+            font-family: 'Courier New', monospace;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .deep-link {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #b8daff;
+        }
+        .deep-link a {
+            color: #0066cc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .deep-link a:hover {
+            text-decoration: underline;
+        }
+        .auth-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+        .auth-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .auth-loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .section {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .section:last-child {
+            border-bottom: none;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="authStatus" class="auth-status auth-loading">🔄 Аутентификация...</div>
+
+    <div class="container">
+        <h1>🧪 Тестирование системы инвайтов Newport</h1>
+        
+        <div class="section">
+            <h2>📋 Статус системы</h2>
+            <div id="systemStatus">
+                <div class="result loading">🔄 Инициализация...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Создание инвайтов</h2>
+            <button onclick="createRandomInvite()" id="createRandomBtn">Создать случайный инвайт</button>
+            <button onclick="createSpecificInvite()" id="createSpecificBtn">Создать инвайт THZ5RZ9FD3D9DR01</button>
+            <div id="createResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Проверка инвайтов</h2>
+            <input type="text" id="inviteIdInput" placeholder="Введите ID инвайта (например: THZ5RZ9FD3D9DR01)" value="THZ5RZ9FD3D9DR01">
+            <button onclick="checkInvite()" id="checkBtn">Проверить инвайт</button>
+            <div id="checkResult"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔗 Тестирование Deep Links</h2>
+            <p>Тестируем ссылки формата: <code>newport://invite/ID</code></p>
+            <div id="deepLinkTest"></div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Статистика</h2>
+            <div id="stats">
+                <p><strong>Созданных инвайтов:</strong> <span id="createdCount">0</span></p>
+                <p><strong>Проверенных инвайтов:</strong> <span id="checkedCount">0</span></p>
+                <p><strong>Валидных инвайтов:</strong> <span id="validCount">0</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAk6uswvE34ml59-zG6m-9JExAMRMYwZfE",
+            authDomain: "newport-23a19.firebaseapp.com",
+            projectId: "newport-23a19",
+            storageBucket: "newport-23a19.firebasestorage.app",
+            messagingSenderId: "806326874620",
+            appId: "1:806326874620:web:f3b98d2b1b61fc24228279",
+            databaseURL: "https://newport-23a19-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Состояние системы
+        let isAuthenticated = false;
+        let currentUser = null;
+        let stats = {
+            created: 0,
+            checked: 0,
+            valid: 0
+        };
+
+        // Элементы DOM
+        const authStatus = document.getElementById('authStatus');
+        const systemStatus = document.getElementById('systemStatus');
+        const createResult = document.getElementById('createResult');
+        const checkResult = document.getElementById('checkResult');
+        const deepLinkTest = document.getElementById('deepLinkTest');
+
+        // Инициализация
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                isAuthenticated = true;
+                currentUser = user;
+                authStatus.textContent = `✅ Аутентифицирован: ${user.isAnonymous ? 'Анонимно' : user.email}`;
+                authStatus.className = 'auth-status auth-success';
+                enableButtons();
+                updateSystemStatus();
+            } else {
+                authStatus.textContent = '❌ Не аутентифицирован';
+                authStatus.className = 'auth-status auth-loading';
+                disableButtons();
+            }
+        });
+
+        // Автоматическая аутентификация
+        signInAnonymously(auth).catch((error) => {
+            console.error('Ошибка аутентификации:', error);
+            authStatus.textContent = `⚠️ Анонимная аутентификация отключена`;
+            authStatus.className = 'auth-status auth-loading';
+            
+            // Временно разрешаем работу без аутентификации для тестирования
+            setTimeout(() => {
+                isAuthenticated = true;
+                currentUser = { uid: 'test-anonymous-user', isAnonymous: true };
+                authStatus.textContent = `✅ Тестовый режим (без аутентификации)`;
+                authStatus.className = 'auth-status auth-success';
+                enableButtons();
+                updateSystemStatus();
+            }, 1000);
+        });
+
+        function enableButtons() {
+            document.getElementById('createRandomBtn').disabled = false;
+            document.getElementById('createSpecificBtn').disabled = false;
+            document.getElementById('checkBtn').disabled = false;
+        }
+
+        function disableButtons() {
+            document.getElementById('createRandomBtn').disabled = true;
+            document.getElementById('createSpecificBtn').disabled = true;
+            document.getElementById('checkBtn').disabled = true;
+        }
+
+        function updateSystemStatus() {
+            systemStatus.innerHTML = `
+                <div class="result success">
+                    ✅ Система готова к работе
+                    <br><br>
+                    <strong>Firebase проект:</strong> newport-resident<br>
+                    <strong>Пользователь:</strong> ${currentUser.uid}<br>
+                    <strong>Тип аутентификации:</strong> ${currentUser.isAnonymous ? 'Анонимная' : 'Обычная'}
+                </div>
+            `;
+        }
+
+        function generateInviteId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 16; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function updateStats() {
+            document.getElementById('createdCount').textContent = stats.created;
+            document.getElementById('checkedCount').textContent = stats.checked;
+            document.getElementById('validCount').textContent = stats.valid;
+        }
+
+        window.createRandomInvite = async function() {
+            if (!isAuthenticated) {
+                createResult.innerHTML = '<div class="result error">❌ Необходима аутентификация</div>';
+                return;
+            }
+
+            createResult.innerHTML = '<div class="result loading">🔄 Создаем случайный инвайт...</div>';
+            
+            try {
+                const inviteId = generateInviteId();
+                const inviteData = {
+                    id: inviteId,
+                    inviterUid: currentUser.uid,
+                    inviterName: 'Тестовый пользователь',
+                    inviterPhone: '+7 (999) 123-45-67',
+                    apartmentId: 'D BLOK 101',
+                    blockName: 'D BLOK',
+                    apartmentNumber: '101',
+                    maxUses: 5,
+                    usedCount: 0,
+                    createdAt: serverTimestamp(),
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 дней
+                    isActive: true,
+                    signature: 'test-signature-' + inviteId
+                };
+
+                const inviteRef = doc(db, 'familyInvites', inviteId);
+                await setDoc(inviteRef, inviteData);
+
+                stats.created++;
+                updateStats();
+
+                const deepLink = `newport://invite/${inviteId}`;
+                
+                createResult.innerHTML = `
+                    <div class="result success">
+                        ✅ Случайный инвайт создан!
+                        <br><br>
+                        <strong>ID инвайта:</strong>
+                        <div class="invite-id">${inviteId}</div>
+                        
+                        <div class="deep-link">
+                            <strong>Deep Link:</strong><br>
+                            <a href="${deepLink}" onclick="testDeepLink('${deepLink}'); return false;">${deepLink}</a>
+                            <br><br>
+                            <button onclick="copyToClipboard('${deepLink}')">📋 Скопировать</button>
+                            <button onclick="testDeepLink('${deepLink}')">🔗 Тестировать</button>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error creating invite:', error);
+                createResult.innerHTML = `
+                    <div class="result error">
+                        ❌ Ошибка при создании инвайта
+                        <br><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        window.createSpecificInvite = async function() {
+            if (!isAuthenticated) {
+                createResult.innerHTML = '<div class="result error">❌ Необходима аутентификация</div>';
+                return;
+            }
+
+            createResult.innerHTML = '<div class="result loading">🔄 Создаем инвайт THZ5RZ9FD3D9DR01...</div>';
+            
+            try {
+                const inviteId = 'THZ5RZ9FD3D9DR01';
+                const inviteData = {
+                    id: inviteId,
+                    inviterUid: currentUser.uid,
+                    inviterName: 'Тестовый пользователь',
+                    inviterPhone: '+7 (999) 123-45-67',
+                    apartmentId: 'D BLOK 101',
+                    blockName: 'D BLOK',
+                    apartmentNumber: '101',
+                    maxUses: 5,
+                    usedCount: 0,
+                    createdAt: serverTimestamp(),
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 дней
+                    isActive: true,
+                    signature: 'test-signature-' + inviteId
+                };
+
+                const inviteRef = doc(db, 'familyInvites', inviteId);
+                await setDoc(inviteRef, inviteData);
+
+                stats.created++;
+                updateStats();
+
+                const deepLink = `newport://invite/${inviteId}`;
+                
+                createResult.innerHTML = `
+                    <div class="result success">
+                        ✅ Инвайт THZ5RZ9FD3D9DR01 создан!
+                        <br><br>
+                        <strong>ID инвайта:</strong>
+                        <div class="invite-id">${inviteId}</div>
+                        
+                        <div class="deep-link">
+                            <strong>Deep Link:</strong><br>
+                            <a href="${deepLink}" onclick="testDeepLink('${deepLink}'); return false;">${deepLink}</a>
+                            <br><br>
+                            <button onclick="copyToClipboard('${deepLink}')">📋 Скопировать</button>
+                            <button onclick="testDeepLink('${deepLink}')">🔗 Тестировать</button>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error creating invite:', error);
+                createResult.innerHTML = `
+                    <div class="result error">
+                        ❌ Ошибка при создании инвайта
+                        <br><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        window.checkInvite = async function() {
+            const inviteId = document.getElementById('inviteIdInput').value.trim();
+            
+            if (!inviteId) {
+                checkResult.innerHTML = '<div class="result error">❌ Введите ID инвайта</div>';
+                return;
+            }
+
+            checkResult.innerHTML = '<div class="result loading">🔄 Проверяем инвайт...</div>';
+            
+            try {
+                const inviteRef = doc(db, 'familyInvites', inviteId);
+                const inviteSnap = await getDoc(inviteRef);
+                
+                stats.checked++;
+                
+                if (inviteSnap.exists()) {
+                    const inviteData = inviteSnap.data();
+                    stats.valid++;
+                    updateStats();
+                    
+                    const deepLink = `newport://invite/${inviteId}`;
+                    
+                    checkResult.innerHTML = `
+                        <div class="result success">
+                            ✅ Инвайт найден и валиден!
+                            <br><br>
+                            <strong>Данные инвайта:</strong>
+                            <pre>${JSON.stringify(inviteData, null, 2)}</pre>
+                            
+                            <div class="deep-link">
+                                <strong>Deep Link:</strong><br>
+                                <a href="${deepLink}" onclick="testDeepLink('${deepLink}'); return false;">${deepLink}</a>
+                                <br><br>
+                                <button onclick="copyToClipboard('${deepLink}')">📋 Скопировать</button>
+                                <button onclick="testDeepLink('${deepLink}')">🔗 Тестировать</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    updateStats();
+                    checkResult.innerHTML = `
+                        <div class="result error">
+                            ❌ Инвайт не найден в базе данных
+                            <br><br>
+                            <strong>ID:</strong> ${inviteId}
+                            <br><br>
+                            <div class="result warning">
+                                💡 Попробуйте создать этот инвайт, используя кнопку "Создать инвайт THZ5RZ9FD3D9DR01"
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error checking invite:', error);
+                updateStats();
+                checkResult.innerHTML = `
+                    <div class="result error">
+                        ❌ Ошибка при проверке инвайта
+                        <br><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        };
+
+        window.copyToClipboard = function(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Ссылка скопирована в буфер обмена!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Не удалось скопировать ссылку');
+            });
+        };
+
+        window.testDeepLink = function(deepLink) {
+            console.log('Testing deep link:', deepLink);
+            
+            deepLinkTest.innerHTML = `
+                <div class="result warning">
+                    🔗 Тестируем deep link: <code>${deepLink}</code>
+                    <br><br>
+                    Попытка открыть приложение...
+                </div>
+            `;
+            
+            // Попытка открыть deep link
+            window.location.href = deepLink;
+            
+            // Показать результат через 2 секунды
+            setTimeout(() => {
+                deepLinkTest.innerHTML = `
+                    <div class="result warning">
+                        📱 Deep link протестирован: <code>${deepLink}</code>
+                        <br><br>
+                        <strong>Если приложение не открылось, проверьте:</strong>
+                        <ul>
+                            <li>Приложение установлено на устройстве</li>
+                            <li>Конфигурация deep links настроена правильно</li>
+                            <li>Устройство поддерживает схему newport://</li>
+                        </ul>
+                    </div>
+                `;
+            }, 2000);
+        };
+
+        // Изначально отключаем кнопки
+        disableButtons();
+    </script>
+</body>
+</html> 
